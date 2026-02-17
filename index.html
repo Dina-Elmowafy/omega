@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OMEGA | Petroleum & Construction Services</title>
+    
+    <!-- Tailwind CSS CDN (For local dev simplicity) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Barlow + Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              omega: {
+                yellow: '#FF9900',
+                dark: '#0B1C33',
+                blue: '#1E3A8A',
+                gray: '#F8FAFC',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Barlow', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <script>
+      (function() {
+        try {
+          const theme = localStorage.getItem('theme');
+          if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
+    <style>
+      body {
+        overflow-x: hidden;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "express": "https://aistudiocdn.com/express@^5.2.1",
+    "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
+    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.3",
+    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.2.1",
+    "jsonwebtoken": "https://aistudiocdn.com/jsonwebtoken@^9.0.3",
+    "pg": "https://aistudiocdn.com/pg@^8.16.3",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.25",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "cors": "https://aistudiocdn.com/cors@^2.8.5",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "compression": "https://aistudiocdn.com/compression@^1.8.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-50 dark:bg-slate-900">
+    <div id="root"></div>
+    <!-- Pointing to src folder -->
+    <script type="module" src="/src/index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
