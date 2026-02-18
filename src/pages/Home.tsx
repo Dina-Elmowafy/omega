@@ -182,7 +182,7 @@ const Home: React.FC = () => {
                  className="relative z-10"
                >
                  <img 
-                   src="/image/why-chose-omega.png" 
+                   src="./image/why-chose-omega.png" 
                    alt="Rope Access Worker" 
                    className="rounded-2xl shadow-2xl"
                  />

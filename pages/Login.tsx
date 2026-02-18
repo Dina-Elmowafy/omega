@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
       <div className="absolute inset-0 z-0">
           <img 
-            src="/image/why-chose-omega.png" 
+            src="./image/why-chose-omega.png" 
             alt="Background" 
             className="w-full h-full object-cover opacity-10"
           />
