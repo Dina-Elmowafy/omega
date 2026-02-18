@@ -24,7 +24,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Maximum Safety: All operations follow strict safety protocols using dual-rope systems and certified technicians. Cost & Time Saving: Quick setup, minimal equipment, and faster execution compared to scaffolding. Ideal for industrial inspections, high-rise maintenance, and structural repairs.",
     iconName: "Anchor",
     features: ["IRATA & SPRAT Certified", "Structural Repairs & Welding", "Cable & System Installations", "Offshore & Confined Space"],
-    image: "image/rope access.jpg"
+    image: "image/rope-access.jpg"
   },
   {
     id: 'lifting-inspection',
@@ -33,7 +33,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "We inspect Cranes (Overhead, Mobile, Tower), Chain blocks, Wire ropes, Shackles, and Hydraulic jacks. With OMEGA, you get safer lifting operations, certified & documented inspections, and fast response support.",
     iconName: "Construction", // Hook/Crane
     features: ["LOLER Compliance", "Load Testing & Certification", "Wire Ropes & Webbing Slings", "Defect Reporting"],
-    image: "image/LIFTING EQUIPMENT .jpg"
+    image: "image/lifting-equipment.jpg"
   },
   {
     id: 'ndt',
@@ -51,7 +51,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Precise Measurements using advanced ultrasonic tools. Class-Approved Procedures meeting ABS, DNV, BV requirements. We deliver clear reports with corrosion mapping and steel renewal advice.",
     iconName: "Ship",
     features: ["Class-Approved Reports", "Corrosion Mapping", "Steel Renewal Advice", "Dry-docking Support"],
-    image: "image/hull gauging.jpg"
+    image: "image/hull-gauging.jpg"
   },
   {
     id: 'sandblasting-painting',
@@ -60,7 +60,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "We use abrasive blasting to strip rust and contaminants. We apply high-performance coatings meeting IMO, NORSOK, and ISO standards. Services include Epoxy, Polyurethane, and Zinc-rich paint systems.",
     iconName: "Paintbrush",
     features: ["Surface Preparation", "High-Performance Coatings", "Dew Point Monitoring", "SSPC/NACE Compliance"],
-    image: "image/Sandblasting .jpg"
+    image: "image/sandblasting.jpg"
   },
   {
     id: 'scaffolding',
@@ -78,7 +78,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Using advanced gamma and X-ray technology to detect subsurface discontinuities. Ideal for inspecting welds, identifying cracks, measuring wall thickness, and assessing castings.",
     iconName: "Radiation",
     features: ["Weld Inspection", "Internal Flaw Detection", "Metallic & Non-metallic", "Porosity Assessment"],
-    image: "image/Gamma Ray & X-Ray.jpg"
+    image: "image/gamma-ray-x-ray.jpg"
   },
   {
     id: 'heat-treatment',
@@ -87,7 +87,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Professional heat treatment to enhance hardness, strength, or ductility. Vital for improving component durability and structural integrity in various industrial applications.",
     iconName: "Flame",
     features: ["Stress Relieving", "Hardness Enhancement", "Pre/Post Weld Treatment", "Controlled Heating"],
-    image: "image/Heat Treatment Services.jpg"
+    image: "image/heat-treatment-services.jpg"
   },
   {
     id: 'pressure-testing',
@@ -96,7 +96,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "We determine the safe operating range of pipelines and fuel tanks. This process ensures structural integrity and operational safety to prevent leaks and failures.",
     iconName: "Gauge",
     features: ["Hydrostatic Testing", "Pipeline Integrity", "Leak Detection", "Safety Certification"],
-    image: "image/Pressure .jpg"
+    image: "image/pressure.jpg"
   },
   {
     id: 'api-inspection',
@@ -105,7 +105,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Monitoring equipment during operation to detect poor performance. Visual inspections cover cracks, loose fittings, elongation, and corrosion. Helps prevent failure and ensure API standard compliance.",
     iconName: "ClipboardCheck",
     features: ["Drill Pipe Inspection", "Tank Inspection", "Structural Checks", "API Standards"],
-    image: "image/Api insp.jpg"
+    image: "image/api-insp.jpg"
   },
   {
     id: 'tubular-inspection',
@@ -114,7 +114,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Inspection for drill pipes and hardware, new or used. Carried out in line with client specifications to ensure safe and efficient drilling operations.",
     iconName: "Cylinder",
     features: ["Drill Pipes", "Casing & Tubing", "Hardware Check", "Operational Safety"],
-    image: "image/Tubular .jpg"
+    image: "image/tubular.jpg"
   },
   {
     id: 'tank-solutions',
@@ -123,7 +123,7 @@ export const SERVICES: ServiceItem[] = [
     fullDescription: "Spatial inspections to detect tank tilt, differential settlement, and deformation. We also offer manufacturing, installation, maintenance, and repair to prevent critical failures.",
     iconName: "Container",
     features: ["Calibration", "Sludge Cleaning", "Deformation Check", "Maintenance & Repair"],
-    image: "image/Tank Solutions.jpg"
+    image: "image/tank-solutions.jpg"
   }
 ];
 
@@ -132,7 +132,7 @@ export const INDUSTRIES: Industry[] = [
     id: 'oil-gas',
     title: "Oil & Gas Sector",
     description: "Specialized services ensuring safety, efficiency, and productivity from exploration to operations.",
-    image: "image/oil & gas.jpg"
+    image: "image/oil-gas.jpg"
   },
   {
     id: 'construction',
