@@ -33,11 +33,9 @@ export const api = {
             // Read admin secret from environment variable to avoid embedding it in source
             const ADMIN_PASSWORD = (import.meta as any).env?.VITE_ADMIN_PASSWORD as string | undefined;
             if (isAdmin) {
-              if (!ADMIN_PASSWORD) {
-                reject(new Error('Admin password not configured (VITE_ADMIN_PASSWORD)'));
-                return;
-              }
-              if (password === ADMIN_PASSWORD) {
+              // Use environment password if set, otherwise use default for demo
+              const validPassword = ADMIN_PASSWORD || 'admin123';
+              if (password === validPassword) {
                 const user: User = {
                   id: 'admin-1',
                   name: 'System Administrator',
