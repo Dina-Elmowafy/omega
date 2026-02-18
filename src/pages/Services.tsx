@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useData } from '../contexts/DataContext';
-import ServiceCard from '../components/ServiceCard';
 import { Check } from 'lucide-react';
 import Logo from '../components/Logo';
 

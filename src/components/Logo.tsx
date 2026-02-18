@@ -18,7 +18,6 @@ const Logo: React.FC<LogoProps> = ({ variant = 'dark', className = '', showSubti
   // The 'G' is always Orange (or white if background is orange, but usually Orange).
   
   const primaryTextColor = variant === 'light' ? white : navy;
-  const secondaryTextColor = variant === 'light' ? white : navy; // For M, E, A
   
   return (
     <div className={`flex flex-col items-start ${className}`}>

@@ -15,7 +15,7 @@ import {
 import Logo from '../components/Logo';
 
 const AdminDashboard: React.FC = () => {
-  const { companyInfo, updateCompanyInfo, services, updateServices, certificates, updateCertificates } = useData();
+  const { companyInfo, updateCompanyInfo, services, updateServices } = useData();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'general' | 'services' | 'certificates'>('general');
