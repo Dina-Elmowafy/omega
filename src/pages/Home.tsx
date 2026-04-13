@@ -10,7 +10,7 @@ import ServiceCard from '../components/ServiceCard';
 import toast from 'react-hot-toast';
 
 const Home: React.FC = () => {
-  const { companyInfo, services, homeContent } = useData();
+ const { services, homeContent } = useData();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [certSearchQuery, setCertSearchQuery] = useState('');
