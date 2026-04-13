@@ -1,4 +1,4 @@
-import { User, CompanyInfo, ServiceItem, InspectionCertificate, ProjectUpdate, BlogPost, JobPosition, HomePageContent, AboutPageContent } from '../types';
+import { User, CompanyInfo, ServiceItem, InspectionCertificate, HomePageContent, AboutPageContent } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { COMPANY_INFO, SERVICES, MOCK_PROJECTS, INDUSTRIES, WHY_CHOOSE_US } from '../constants';

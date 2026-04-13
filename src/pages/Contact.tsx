@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
+import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
 import { COMPANY_INFO } from '../constants';

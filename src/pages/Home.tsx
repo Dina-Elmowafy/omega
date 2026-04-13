@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Shield, Search } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { INDUSTRIES, WHY_CHOOSE_US } from '../constants';
@@ -10,7 +10,7 @@ import ServiceCard from '../components/ServiceCard';
 import toast from 'react-hot-toast';
 
 const Home: React.FC = () => {
-  const { companyInfo, services, homeContent } = useData();
+ const { services, homeContent } = useData();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [certSearchQuery, setCertSearchQuery] = useState('');

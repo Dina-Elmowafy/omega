@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Anchor, Construction, Scan, Ship, Paintbrush, Cylinder, Zap, Flame, Gauge, ClipboardCheck, Container, Radiation } from 'lucide-react';
+import { ArrowRight, Anchor, Construction, Scan, Ship, Paintbrush, Cylinder, Flame, Gauge, ClipboardCheck, Container } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ServiceItem } from '../types';
 

@@ -24,7 +24,9 @@ export interface Industry {
 export interface User {
   id: string;
   name: string;
+  nameAr?: string;
   companyName: string;
+  companyNameAr?: string;
   role: 'admin' | 'client' | 'staff';
   email: string;
   avatar?: string;
@@ -33,6 +35,7 @@ export interface User {
 export interface InspectionCertificate {
   id: string;
   equipmentName: string;
+  equipmentNameAr?: string;
   serialNumber: string;
   inspectionDate: string;
   expiryDate: string;
@@ -40,10 +43,12 @@ export interface InspectionCertificate {
   pdfUrl: string;
   clientId?: string; 
   companyName?: string;
+  companyNameAr?: string;
 }
 
 export interface ProjectStage {
   name: string;
+  nameAr?: string;
   status: 'pending' | 'active' | 'completed';
   date?: string;
 }
@@ -51,9 +56,11 @@ export interface ProjectStage {
 export interface ProjectUpdate {
   id: string;
   title: string;
+  titleAr?: string;
   progress: number;
   status: string;
   lastUpdated: string;
+  lastUpdatedAr?: string;
   stages: ProjectStage[];
   clientId?: string;
 }
@@ -76,36 +83,53 @@ export interface WhyChooseUsItem {
 export interface BlogPost {
   id: string;
   title: string;
+  titleAr?: string;
   excerpt: string;
+  excerptAr?: string;
   content: string;
+  contentAr?: string;
   author: string;
+  authorAr?: string;
   date: string;
   image: string;
   category: string;
+  categoryAr?: string;
 }
 
 export interface JobPosition {
   id: string;
   title: string;
+  titleAr?: string;
   location: string;
+  locationAr?: string;
   type: 'Full-time' | 'Part-time' | 'Contract';
+  typeAr?: string;
   description: string;
+  descriptionAr?: string;
   requirements: string[];
+  requirementsAr?: string[];
 }
 
 export interface CompanyInfo {
   name: string;
+  nameAr?: string;
   fullName: string;
+  fullNameAr?: string;
   slogan: string;
+  sloganAr?: string;
   established: number;
   location: string;
+  locationAr?: string;
   phone: string;
   email: string;
   website: string;
   whatsapp: string;
   address: string;
+  addressAr?: string;
   mission: string;
+  missionAr?: string;
   vision: string;
+  visionAr?: string;
 }
 
 export interface StatItem {
