@@ -11,11 +11,15 @@ const CertificateView: React.FC = () => {
 
   useEffect(() => {
     if (!loading && id) {
-      const query = id.toLowerCase();
-      const found = certificates.find(c => 
-        c.id.toLowerCase() === query || 
-        c.serialNumber.toLowerCase() === query
-      );
+      const query = id.toLowerCase().trim();
+      
+      const found = certificates.find(c => {
+        // تأمين الكود: لو الشهادة متسجلة للتجربة ومفيهاش ID أو سيريال، الكود مش هيضرب
+        const safeId = c.id ? String(c.id).toLowerCase() : '';
+        const safeSerial = c.serialNumber ? String(c.serialNumber).toLowerCase() : '';
+        return safeId === query || safeSerial === query;
+      });
+      
       setCert(found);
     }
   }, [id, certificates, loading]);
@@ -62,26 +66,26 @@ const CertificateView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Shield size={14}/> Certificate ID</p>
-              <p className="text-lg font-mono font-bold text-gray-800">{cert.id}</p>
+              <p className="text-lg font-mono font-bold text-gray-800">{cert.id || 'N/A'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
-              <p className="text-lg font-mono font-bold text-gray-800">{cert.serialNumber}</p>
+              <p className="text-lg font-mono font-bold text-gray-800">{cert.serialNumber || 'N/A'}</p>
             </div>
             <div className="col-span-1 md:col-span-2">
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Equipment Name</p>
-              <p className="text-xl font-bold text-omega-blue">{cert.equipmentName}</p>
+              <p className="text-xl font-bold text-omega-blue">{cert.equipmentName || 'N/A'}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="p-4 border border-gray-100 rounded-lg">
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Calendar size={14}/> Inspected On</p>
-              <p className="font-bold text-gray-800">{cert.inspectionDate}</p>
+              <p className="font-bold text-gray-800">{cert.inspectionDate || 'N/A'}</p>
             </div>
             <div className="p-4 border border-gray-100 rounded-lg">
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Calendar size={14}/> Expiry Date</p>
-              <p className="font-bold text-gray-800">{cert.expiryDate}</p>
+              <p className="font-bold text-gray-800">{cert.expiryDate || 'N/A'}</p>
             </div>
           </div>
 
@@ -98,8 +102,7 @@ const CertificateView: React.FC = () => {
         </div>
 
         <div className="mt-10 flex justify-center">
-          {cert.pdfUrl && cert.pdfUrl !== '#' && cert.pdfUrl.trim() !== '' ? (
-            // هنا شلنا كلمة download عشان يفتح اللينك براحته
+          {cert.pdfUrl && typeof cert.pdfUrl === 'string' && cert.pdfUrl.trim() !== '' && cert.pdfUrl !== '#' ? (
             <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer" className="bg-omega-dark text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-omega-blue transition-colors flex items-center gap-2 shadow-lg hover:-translate-y-1 transform">
               <FileText size={18} /> View & Download PDF
             </a>
