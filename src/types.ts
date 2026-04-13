@@ -40,6 +40,7 @@ export interface InspectionCertificate {
   inspectionDate: string;
   expiryDate: string;
   status: 'valid' | 'expiring' | 'expired';
+  equipmentStatus?: 'Accepted' | 'Rejected'; // حقل حالة المعدة الجديد
   pdfUrl: string;
   clientId?: string; 
   companyName?: string;

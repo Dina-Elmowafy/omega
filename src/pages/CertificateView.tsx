@@ -10,8 +10,13 @@ const CertificateView: React.FC = () => {
   const [cert, setCert] = useState<any>(null);
 
   useEffect(() => {
-    if (!loading) {
-      const found = certificates.find(c => c.id === id);
+    if (!loading && id) {
+      // تعديل هام: البحث بـ ID الشهادة أو السيريال نمبر مع تجاهل حالة الأحرف
+      const query = id.toLowerCase();
+      const found = certificates.find(c => 
+        c.id.toLowerCase() === query || 
+        c.serialNumber.toLowerCase() === query
+      );
       setCert(found);
     }
   }, [id, certificates, loading]);
@@ -23,7 +28,7 @@ const CertificateView: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
         <AlertTriangle size={64} className="text-red-500 mb-4" />
         <h1 className="text-3xl font-bold text-omega-dark mb-2">Certificate Not Found</h1>
-        <p className="text-gray-600 mb-6">The certificate ID you scanned does not exist in our system.</p>
+        <p className="text-gray-600 mb-6">The certificate ID or Serial Number you entered does not exist in our system.</p>
         <Link to="/" className="bg-omega-blue text-white px-6 py-2 rounded-full font-bold">Go to Homepage</Link>
       </div>
     );
@@ -43,14 +48,14 @@ const CertificateView: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-6 flex justify-center items-start">
       <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl w-full max-w-2xl border-t-8 border-omega-yellow">
         <div className="flex justify-between items-start border-b border-gray-100 pb-6 mb-6">
-          <Logo variant="dark" showSubtitle={false} className="scale-75 origin-top-left" />
+          <Logo variant="dark" showSubtitle={false} className="scale-75 origin-top-left rtl:origin-top-right" />
           <div className={`flex flex-col items-center justify-center px-4 py-2 rounded-lg ${statusInfo.bg} ${statusInfo.color}`}>
             {statusInfo.icon}
             <span className="font-bold text-sm uppercase tracking-wide mt-1">{statusInfo.text}</span>
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6" dir="ltr">
           <h2 className="text-2xl font-display font-bold text-omega-dark uppercase tracking-wide">
             Equipment Certification
           </h2>
@@ -80,12 +85,27 @@ const CertificateView: React.FC = () => {
               <p className="font-bold text-gray-800">{cert.expiryDate}</p>
             </div>
           </div>
+
+          {/* حالة المعدة (مقبولة أو مرفوضة) */}
+          <div className={`mt-6 p-5 rounded-xl border-2 flex items-center justify-between ${cert.equipmentStatus === 'Rejected' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Equipment Final Status</p>
+              <p className={`text-2xl font-bold uppercase ${cert.equipmentStatus === 'Rejected' ? 'text-red-700' : 'text-green-700'}`}>
+                {cert.equipmentStatus === 'Rejected' ? 'REJECTED (مرفوضة)' : 'ACCEPTED (مقبولة)'}
+              </p>
+            </div>
+            {cert.equipmentStatus === 'Rejected' ? <XCircle size={48} className="text-red-400" /> : <CheckCircle size={48} className="text-green-400" />}
+          </div>
         </div>
 
         <div className="mt-10 flex justify-center">
-          <a href={cert.pdfUrl} target="_blank" rel="noreferrer" className="bg-omega-dark text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-omega-blue transition-colors flex items-center gap-2">
-            <FileText size={18} /> Download Full PDF
-          </a>
+          {cert.pdfUrl && cert.pdfUrl !== '#' ? (
+            <a href={cert.pdfUrl} target="_blank" rel="noreferrer" className="bg-omega-dark text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-omega-blue transition-colors flex items-center gap-2 shadow-lg hover:-translate-y-1 transform">
+              <FileText size={18} /> View & Download Full PDF
+            </a>
+          ) : (
+             <p className="text-gray-400 italic text-sm">No PDF attached for this certificate.</p>
+          )}
         </div>
       </div>
     </div>

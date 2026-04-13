@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, CheckCircle, Shield, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { INDUSTRIES, WHY_CHOOSE_US } from '../constants';
@@ -10,7 +10,7 @@ import ServiceCard from '../components/ServiceCard';
 import toast from 'react-hot-toast';
 
 const Home: React.FC = () => {
- const { services, homeContent } = useData();
+  const { companyInfo, services, homeContent } = useData();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [certSearchQuery, setCertSearchQuery] = useState('');
@@ -22,7 +22,7 @@ const Home: React.FC = () => {
   const handleCertSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!certSearchQuery.trim()) {
-      toast.error(language === 'ar' ? 'الرجاء إدخال رقم الشهادة' : 'Please enter a certificate ID');
+      toast.error(language === 'ar' ? 'الرجاء إدخال السيريال أو رقم الشهادة' : 'Please enter Certificate ID or Serial Number');
       return;
     }
     navigate(`/certificate/${certSearchQuery.trim()}`);
@@ -75,7 +75,7 @@ const Home: React.FC = () => {
                    type="text" 
                    value={certSearchQuery}
                    onChange={(e) => setCertSearchQuery(e.target.value)}
-                   placeholder={language === 'ar' ? "أدخل رقم الشهادة للتحقق..." : "Enter Certificate ID to verify..."} 
+                   placeholder={language === 'ar' ? "أدخل رقم الشهادة أو السيريال..." : "Enter Certificate ID or Serial Number..."} 
                    className="w-full bg-transparent text-white placeholder-gray-300 px-6 py-3 outline-none"
                  />
                  <button type="submit" className="bg-omega-blue hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-colors">
@@ -87,7 +87,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* باقي الصفحة كما هي بدون تغييرات (الخدمات، الصناعات، الخ) */}
       {/* Services Overview */}
       <section className="py-24 bg-gray-50 dark:bg-slate-800 transition-colors">
         <div className="container mx-auto px-6">
@@ -134,6 +133,48 @@ const Home: React.FC = () => {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-24 bg-white dark:bg-slate-900 transition-colors relative">
+        <div className="container mx-auto px-6 flex flex-col lg:flex-row gap-20 items-center">
+          <div className="lg:w-1/2">
+            <span className="text-omega-blue dark:text-omega-yellow font-bold uppercase tracking-widest text-sm mb-2 block">{language === 'ar' ? 'وعدنا' : 'Our Promise'}</span>
+            <h2 className="text-5xl font-display font-bold text-omega-dark dark:text-white mb-10 uppercase">
+              {getLocalizedText(safeHomeContent.whyChooseUsTitle || "WHY CHOOSE OMEGA?", safeHomeContent.whyChooseUsTitleAr)}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-10 gap-x-8">
+              {(safeHomeContent.whyChooseUsItems || WHY_CHOOSE_US).map((item, idx) => (
+                <div key={idx} className="flex gap-4 group">
+                  <div className="shrink-0 mt-1 p-2 bg-gray-50 dark:bg-slate-800 rounded-lg group-hover:bg-omega-yellow group-hover:text-omega-dark transition-colors text-omega-blue dark:text-omega-yellow"><CheckCircle size={24} /></div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-lg mb-2 font-display uppercase tracking-wide">
+                      {getLocalizedText(item.title, item.titleAr)}
+                    </h4>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                      {getLocalizedText(item.description, item.descriptionAr)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="lg:w-1/2 relative">
+             <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="relative z-10">
+               {safeHomeContent.whyChooseUsImage ? (
+                 <img src={safeHomeContent.whyChooseUsImage} alt="Omega Quality" className="rounded-2xl shadow-2xl w-full object-cover" />
+               ) : (
+                 <div className="w-full h-96 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-500">No Image</div>
+               )}
+               <div className="absolute -bottom-10 rtl:-right-10 ltr:-left-10 bg-white dark:bg-slate-800 p-8 rounded-xl shadow-2xl border-l-8 rtl:border-r-8 rtl:border-l-0 border-omega-yellow hidden md:block">
+                 <div className="flex items-center gap-4 mb-2"><Shield size={32} className="text-omega-blue dark:text-omega-yellow" /><span className="text-4xl font-bold font-display text-omega-dark dark:text-white">100%</span></div>
+                 <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                   {language === 'ar' ? 'سجل الامتثال للسلامة' : 'Safety Compliance Record'}
+                 </p>
+               </div>
+             </motion.div>
           </div>
         </div>
       </section>
