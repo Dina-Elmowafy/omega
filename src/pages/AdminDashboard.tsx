@@ -2,16 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Settings, FileText, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Building2, Home, Info, X } from 'lucide-react';
+import { Settings, FileText, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Building2, Home, Info, X, Loader2 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { QRCodeCanvas } from 'qrcode.react';
 import { api } from '../services/api';
 import { HomePageContent, CompanyInfo, AboutPageContent } from '../types';
 import toast from 'react-hot-toast';
-
-// استدعاءات الـ Firebase لرفع الملفات
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AdminDashboard: React.FC = () => {
   const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, refreshData } = useData();
@@ -21,7 +17,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'certificates'>('general');
   const [editingService, setEditingService] = useState<any | null>(null);
   const [editingCert, setEditingCert] = useState<any | null>(null); 
-  const [pdfFile, setPdfFile] = useState<File | null>(null); 
+  const [isSavingCert, setIsSavingCert] = useState(false);
   
   const [localHomeContent, setLocalHomeContent] = useState<HomePageContent>(homeContent);
   const [localAboutContent, setLocalAboutContent] = useState<AboutPageContent>(aboutContent);
@@ -35,7 +31,7 @@ const AdminDashboard: React.FC = () => {
 
   // === GENERAL ===
   const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalCompanyInfo({ ...localCompanyInfo, [e.target.name]: e.target.value }); };
-  const saveCompanyInfo = async () => { try { await updateCompanyInfo(localCompanyInfo); toast.success("Company info saved!"); } catch (e) { toast.error("Error saving data"); } };
+  const saveCompanyInfo = async () => { try { await updateCompanyInfo(localCompanyInfo); toast.success("Saved!"); } catch (e) { toast.error("Error"); } };
 
   // === HOME PAGE ===
   const handleHomeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalHomeContent({ ...localHomeContent, [e.target.name]: e.target.value }); };
@@ -44,12 +40,12 @@ const AdminDashboard: React.FC = () => {
   const handleIndustryChange = (index: number, field: string, value: string) => { const newInds = [...(localHomeContent.industries || [])]; newInds[index] = { ...newInds[index], [field]: value }; setLocalHomeContent({ ...localHomeContent, industries: newInds }); };
   const handleIndustryImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => { const newInds = [...(localHomeContent.industries || [])]; newInds[index] = { ...newInds[index], image: reader.result as string }; setLocalHomeContent({ ...localHomeContent, industries: newInds }); }; reader.readAsDataURL(e.target.files[0]); } };
   const handleWhyChooseUsChange = (index: number, field: string, value: string) => { const newItems = [...(localHomeContent.whyChooseUsItems || [])]; newItems[index] = { ...newItems[index], [field]: value }; setLocalHomeContent({ ...localHomeContent, whyChooseUsItems: newItems }); };
-  const saveHomeContent = async () => { const btn = document.getElementById('save-home-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateHomeContent(localHomeContent); toast.success("Home Page updated!"); } catch(e) { toast.error("Error saving Home Page"); } finally { if (btn) btn.innerText = ogText; } };
+  const saveHomeContent = async () => { const btn = document.getElementById('save-home-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateHomeContent(localHomeContent); toast.success("Home Page updated!"); } catch(e) { toast.error("Error"); } finally { if (btn) btn.innerText = ogText; } };
 
   // === ABOUT PAGE ===
   const handleAboutChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalAboutContent({ ...localAboutContent, [e.target.name]: e.target.value }); };
   const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => setLocalAboutContent({ ...localAboutContent, coverImage: reader.result as string }); reader.readAsDataURL(e.target.files[0]); } };
-  const saveAboutContent = async () => { const btn = document.getElementById('save-about-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateAboutContent(localAboutContent); toast.success("About Page updated!"); } catch(e) { toast.error("Error saving About Page"); } finally { if (btn) btn.innerText = ogText; } };
+  const saveAboutContent = async () => { const btn = document.getElementById('save-about-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateAboutContent(localAboutContent); toast.success("About Page updated!"); } catch(e) { toast.error("Error"); } finally { if (btn) btn.innerText = ogText; } };
 
   // === SERVICES ===
   const handleServiceChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { if (editingService) setEditingService({ ...editingService, [e.target.name]: e.target.value }); };
@@ -67,12 +63,13 @@ const AdminDashboard: React.FC = () => {
     } 
   };
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (editingService && e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => setEditingService({ ...editingService, image: reader.result as string }); reader.readAsDataURL(e.target.files[0]); } };
-  const saveService = async () => { if (!editingService) return; try { const isNew = editingService.id && String(editingService.id).startsWith('new_'); let updatedServices = isNew ? [...services, editingService] : services.map(s => s.id === editingService.id ? editingService : s); const uniqueServices = Array.from(new Map(updatedServices.map(s => [s.id, s])).values()); await updateServices(uniqueServices); setEditingService(null); toast.success('Service Saved!'); } catch (error) { toast.error('Error saving service'); } };
+  const saveService = async () => { if (!editingService) return; try { const isNew = editingService.id && String(editingService.id).startsWith('new_'); let updatedServices = isNew ? [...services, editingService] : services.map(s => s.id === editingService.id ? editingService : s); const uniqueServices = Array.from(new Map(updatedServices.map(s => [s.id, s])).values()); await updateServices(uniqueServices); setEditingService(null); toast.success('Saved!'); } catch (error) { toast.error('Error'); } };
   const createNewService = () => setEditingService({ id: `new_${Date.now()}`, title: '', titleAr: '', shortDescription: '', shortDescriptionAr: '', fullDescription: '', fullDescriptionAr: '', iconName: '', image: '', features: ['', '', ''], featuresAr: ['', '', ''] });
   const deleteService = (id: string) => { if (confirm('Delete?')) updateServices(services.filter(s => s.id !== id)); };
 
   // === CERTIFICATES ===
   const handleCertChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingCert) setEditingCert({ ...editingCert, [e.target.name]: e.target.value }); };
+  
   const saveCertificate = async () => { 
     if (!editingCert) return; 
     
@@ -82,32 +79,20 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
-    const btn = document.getElementById('save-cert-btn'); 
-    const originalText = btn ? btn.innerText : ''; 
-    if (btn) btn.innerText = "Saving & Uploading..."; 
+    setIsSavingCert(true);
     
     try { 
-      let finalPdfUrl = editingCert.pdfUrl || '';
-
-      if (pdfFile) {
-        const fileRef = ref(storage, `certificates/${Date.now()}_${pdfFile.name}`);
-        await uploadBytes(fileRef, pdfFile);
-        finalPdfUrl = await getDownloadURL(fileRef);
-      }
-
       const today = new Date(); 
       const expDate = new Date(editingCert.expiryDate || today); 
       const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24)); 
-      
       let status = 'valid'; 
       if (diffDays <= 0) status = 'expired'; 
       else if (diffDays <= 30) status = 'expiring'; 
       
       const finalCert = { 
         ...editingCert, 
-        id: editingCert.id.trim(), // حفظ الـ ID اللي تم إدخاله يدوياً
+        id: editingCert.id.trim(), 
         status, 
-        pdfUrl: finalPdfUrl, 
         equipmentStatus: editingCert.equipmentStatus || 'Accepted',
         companyName: editingCert.companyName || 'Unassigned / Others' 
       }; 
@@ -115,17 +100,15 @@ const AdminDashboard: React.FC = () => {
       await api.certificates.addOrUpdate(finalCert); 
       await refreshData(); 
       setEditingCert(null); 
-      setPdfFile(null);
       toast.success('Certificate Saved Successfully!'); 
-    } catch (error) { 
-      toast.error('Error saving certificate!'); 
+    } catch (error: any) { 
       console.error(error);
+      toast.error(`Error: ${error.message || 'Failed to save'}`); 
     } finally { 
-      if (btn) btn.innerText = originalText; 
+      setIsSavingCert(false); 
     } 
   };
   
-  // تعديل: مسح الـ ID الافتراضي عشان الأدمن يكتبه بنفسه
   const createNewCertificate = () => { 
     setEditingCert({ 
       id: '', 
@@ -134,13 +117,12 @@ const AdminDashboard: React.FC = () => {
       serialNumber: '', 
       inspectionDate: '', 
       expiryDate: '', 
-      pdfUrl: '', 
-      equipmentStatus: 'Accepted' 
+      pdfUrl: '', // رابط نصي لجوجل درايف
+      equipmentStatus: 'Accepted'
     }); 
-    setPdfFile(null); 
   };
   
-  const deleteCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.certificates.delete(id); await refreshData(); toast.success('Deleted'); } catch (error) { toast.error('Delete failed'); } } };
+  const deleteCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.certificates.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
 
   const groupedCerts = certificates.reduce((acc, cert) => { const company = cert.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof certificates>);
   const sortedCompanies = Object.keys(groupedCerts).sort((a, b) => a.localeCompare(b));
@@ -397,38 +379,50 @@ const AdminDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto">
-                <div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">Upload Certificate</h3><button type="button" onClick={() => setEditingCert(null)} className="p-2 bg-gray-50 rounded-full"><X size={20} /></button></div>
+                <div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingCert.id ? 'Edit Certificate' : 'New Certificate'}</h3><button type="button" onClick={() => setEditingCert(null)} className="p-2 bg-gray-50 rounded-full"><X size={20} /></button></div>
                 <div className="space-y-6">
                   
-                  {/* تم إضافة خانة رقم الشهادة هنا */}
                   <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold mb-2">Certificate ID (رقم الشهادة)</label><input name="id" value={editingCert.id || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg font-mono text-blue-700 bg-blue-50" placeholder="e.g. C-12345" /></div>
-                    <div><label className="block text-sm font-bold mb-2">Company Name</label><input name="companyName" value={editingCert.companyName || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg" /></div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Certificate ID (رقم الشهادة)</label>
+                      <input name="id" value={editingCert.id || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono text-blue-700 bg-blue-50 focus:outline-none focus:border-blue-400" placeholder="e.g. C-12345" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Company Name</label>
+                      <input name="companyName" value={editingCert.companyName || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold mb-2">Equipment</label><input name="equipmentName" value={editingCert.equipmentName || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg" /></div>
-                    <div><label className="block text-sm font-bold mb-2">Serial</label><input name="serialNumber" value={editingCert.serialNumber || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg font-mono" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Equipment</label><input name="equipmentName" value={editingCert.equipmentName || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Serial</label><input name="serialNumber" value={editingCert.serialNumber || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" /></div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6"><div><label className="block text-sm font-bold mb-2">Inspection Date</label><input type="date" name="inspectionDate" value={editingCert.inspectionDate || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg" /></div><div><label className="block text-sm font-bold mb-2">Expiry Date</label><input type="date" name="expiryDate" value={editingCert.expiryDate || ''} onChange={handleCertChange} className="w-full p-3 border rounded-lg" /></div></div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div><label className="block text-sm font-bold mb-2">Inspection Date</label><input type="date" name="inspectionDate" value={editingCert.inspectionDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Expiry Date</label><input type="date" name="expiryDate" value={editingCert.expiryDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold mb-2">Equipment Status (حالة المعدة)</label>
-                      <select name="equipmentStatus" value={editingCert.equipmentStatus || 'Accepted'} onChange={handleCertChange} className="w-full p-3 border rounded-lg bg-gray-50">
+                      <select name="equipmentStatus" value={editingCert.equipmentStatus || 'Accepted'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
                         <option value="Accepted">Accepted (مقبولة)</option>
                         <option value="Rejected">Rejected (مرفوضة)</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold mb-2">Upload PDF Report</label>
-                      <input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="w-full p-2 border border-dashed rounded-lg bg-gray-50" />
-                      {editingCert.pdfUrl && !pdfFile && <a href={editingCert.pdfUrl} target="_blank" className="text-xs text-blue-600 mt-1 underline block">View Current PDF</a>}
+                      <label className="block text-sm font-bold mb-2">PDF Link (Google Drive)</label>
+                      <input type="url" name="pdfUrl" value={editingCert.pdfUrl || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:border-omega-yellow" placeholder="https://drive.google.com/..." />
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-8 border-t"><button type="button" id="save-cert-btn" onClick={saveCertificate} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold"><Save size={18} className="inline mr-2"/> Save</button><button type="button" onClick={() => setEditingCert(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
+                  <div className="flex gap-4 pt-8 border-t">
+                    <button type="button" onClick={saveCertificate} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold flex justify-center items-center disabled:opacity-70 transition-all">
+                      {isSavingCert ? <><Loader2 className="animate-spin mr-2" size={18} /> Saving...</> : <><Save size={18} className="inline mr-2"/> Save Certificate</>}
+                    </button>
+                    <button type="button" onClick={() => setEditingCert(null)} disabled={isSavingCert} className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold disabled:opacity-50 transition-colors">Cancel</button>
+                  </div>
                 </div>
               </div>
             )}

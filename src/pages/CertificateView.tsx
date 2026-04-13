@@ -11,7 +11,6 @@ const CertificateView: React.FC = () => {
 
   useEffect(() => {
     if (!loading && id) {
-      // تعديل هام: البحث بـ ID الشهادة أو السيريال نمبر مع تجاهل حالة الأحرف
       const query = id.toLowerCase();
       const found = certificates.find(c => 
         c.id.toLowerCase() === query || 
@@ -99,12 +98,13 @@ const CertificateView: React.FC = () => {
         </div>
 
         <div className="mt-10 flex justify-center">
-          {cert.pdfUrl && cert.pdfUrl !== '#' ? (
-            <a href={cert.pdfUrl} target="_blank" rel="noreferrer" className="bg-omega-dark text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-omega-blue transition-colors flex items-center gap-2 shadow-lg hover:-translate-y-1 transform">
-              <FileText size={18} /> View & Download Full PDF
+          {cert.pdfUrl && cert.pdfUrl !== '#' && cert.pdfUrl.trim() !== '' ? (
+            // هنا شلنا كلمة download عشان يفتح اللينك براحته
+            <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer" className="bg-omega-dark text-white px-8 py-3 rounded-full font-bold uppercase tracking-wider hover:bg-omega-blue transition-colors flex items-center gap-2 shadow-lg hover:-translate-y-1 transform">
+              <FileText size={18} /> View & Download PDF
             </a>
           ) : (
-             <p className="text-gray-400 italic text-sm">No PDF attached for this certificate.</p>
+             <p className="text-gray-400 italic text-sm">No PDF link provided for this certificate.</p>
           )}
         </div>
       </div>
