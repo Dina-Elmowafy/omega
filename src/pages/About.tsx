@@ -1,157 +1,87 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { COMPANY_INFO } from '../constants';
-import { Target, Eye, Clock, Award } from 'lucide-react';
+import { Target, Eye, Shield, Users, Award, Zap } from 'lucide-react';
+import { useData } from '../contexts/DataContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const About: React.FC = () => {
+  const { aboutContent } = useData();
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
+
+  const safeAbout = aboutContent && Object.keys(aboutContent).length > 0 ? aboutContent : {
+    title: "WHO WE ARE",
+    subtitle: "Excellence in Engineering & Industrial Services",
+    story: "Founded by a team of visionary engineers, OMEGA was built on a foundation of uncompromising safety...",
+    mission: "To deliver superior inspection, maintenance, and engineering services...",
+    vision: "To be the undisputed leader in industrial solutions...",
+    coverImage: "https://images.unsplash.com/photo-1504307651254-35680f356f58?auto=format&fit=crop&q=80"
+  };
+
   return (
-    <div className="pt-20 min-h-screen bg-white overflow-hidden">
-      
-      {/* Hero Section */}
-      <section className="relative h-96 flex items-center justify-center">
+    <div className="pt-20 pb-16 bg-white dark:bg-slate-900 min-h-screen transition-colors duration-300">
+      <div className="relative h-[60vh] min-h-[500px] flex items-center justify-center overflow-hidden mb-24">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1531834685032-c34bf0d84c77?auto=format&fit=crop&q=80" 
-            alt="Industrial Meeting" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-omega-dark/80"></div>
+          <img src={safeAbout.coverImage} alt="Omega Team" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-omega-dark/80 mix-blend-multiply"></div>
         </div>
-        <div className="relative z-10 text-center px-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-5xl md:text-6xl font-display font-bold text-white mb-4"
-          >
-            WHO WE ARE
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-xl text-omega-yellow font-medium"
-          >
-            Established in 2019 • Cairo, Egypt
-          </motion.p>
+        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+          <span className="text-omega-yellow font-bold tracking-widest uppercase mb-4 block">
+            {isAr ? 'قصتنا' : 'Our Story'}
+          </span>
+          <h1 className="text-5xl md:text-7xl font-display font-bold text-white mb-6 uppercase">
+            {isAr && safeAbout.titleAr ? safeAbout.titleAr : safeAbout.title}
+          </h1>
+          <p className="text-xl text-gray-300 font-light leading-relaxed">
+            {isAr && safeAbout.subtitleAr ? safeAbout.subtitleAr : safeAbout.subtitle}
+          </p>
         </div>
-      </section>
+      </div>
 
-      {/* Main Content */}
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-16">
-            
-            {/* Text Content */}
-            <div className="lg:w-1/2">
-              <motion.div 
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <h2 className="text-4xl font-display font-bold text-omega-dark mb-6">
-                  OMEGA for Petroleum & Construction Services
-                </h2>
-                <div className="h-1 w-20 bg-omega-yellow mb-8"></div>
-                <p className="text-gray-600 leading-relaxed mb-6 text-lg">
-                  OMEGA is an Egyptian shareholding company headquartered in Cairo. We are recognized globally as a leading provider of fully integrated engineering, procurement, construction supervision, and project management services in the petroleum sector.
-                </p>
-                <div className="bg-gray-50 p-6 border-l-4 border-omega-yellow rounded-r-lg shadow-sm">
-                  <p className="text-omega-dark font-medium italic">
-                    "{COMPANY_INFO.slogan}"
-                  </p>
-                </div>
-              </motion.div>
+      <div className="container mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24 items-center">
+          <div>
+            <h2 className="text-3xl font-display font-bold text-omega-dark dark:text-white mb-6">
+                {isAr ? 'معايير أوميجا' : 'THE OMEGA STANDARD'}
+            </h2>
+            <div className="w-20 h-1.5 bg-omega-yellow mb-8"></div>
+            <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed mb-6 whitespace-pre-line">
+              {isAr && safeAbout.storyAr ? safeAbout.storyAr : safeAbout.story}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-gray-50 dark:bg-slate-800 p-8 rounded-xl border-t-4 border-omega-blue shadow-sm transition-colors">
+              <Target size={40} className="text-omega-blue dark:text-omega-yellow mb-6" />
+              <h3 className="text-xl font-bold text-omega-dark dark:text-white mb-4 uppercase">
+                {isAr ? 'مهمتنا' : 'Our Mission'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                {isAr && safeAbout.missionAr ? safeAbout.missionAr : safeAbout.mission}
+              </p>
             </div>
-
-            {/* Stats / Graphic */}
-            <div className="lg:w-1/2 grid grid-cols-2 gap-4">
-              <motion.img 
-                 initial={{ opacity: 0, scale: 0.8 }}
-                 whileInView={{ opacity: 1, scale: 1 }}
-                 transition={{ duration: 0.5 }}
-                 src="https://images.unsplash.com/photo-1565514020176-db99446f2249?auto=format&fit=crop&q=80" 
-                 className="rounded shadow-lg w-full h-64 object-cover"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-omega-dark p-8 rounded shadow-lg flex flex-col justify-center items-center text-center text-white"
-              >
-                 <Award size={48} className="text-omega-yellow mb-4" />
-                 <h3 className="text-4xl font-display font-bold">5+</h3>
-                 <p className="text-sm uppercase tracking-widest text-gray-400">Years of Excellence</p>
-              </motion.div>
+            <div className="bg-gray-50 dark:bg-slate-800 p-8 rounded-xl border-t-4 border-omega-yellow shadow-sm sm:mt-12 transition-colors">
+              <Eye size={40} className="text-omega-yellow mb-6" />
+              <h3 className="text-xl font-bold text-omega-dark dark:text-white mb-4 uppercase">
+                {isAr ? 'رؤيتنا' : 'Our Vision'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                {isAr && safeAbout.visionAr ? safeAbout.visionAr : safeAbout.vision}
+              </p>
             </div>
-
           </div>
         </div>
-      </section>
 
-      {/* Mission & Vision */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-             
-             {/* Mission */}
-             <motion.div 
-               whileHover={{ y: -10 }}
-               className="bg-white p-10 rounded-lg shadow-lg border-t-4 border-omega-blue"
-             >
-                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <Target className="text-omega-blue" size={32} />
-                </div>
-                <h3 className="text-3xl font-display font-bold text-omega-dark mb-4">OUR MISSION</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {COMPANY_INFO.mission}
-                </p>
-             </motion.div>
-
-             {/* Vision */}
-             <motion.div 
-               whileHover={{ y: -10 }}
-               className="bg-white p-10 rounded-lg shadow-lg border-t-4 border-omega-yellow"
-             >
-                <div className="bg-yellow-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <Eye className="text-omega-yellow" size={32} />
-                </div>
-                <h3 className="text-3xl font-display font-bold text-omega-dark mb-4">OUR VISION</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {COMPANY_INFO.vision}
-                </p>
-             </motion.div>
-
-           </div>
-        </div>
-      </section>
-
-      {/* Core Values / Features */}
-      <section className="py-20 bg-omega-dark text-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-display font-bold">CORE OBJECTIVES</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-             <div className="p-6">
-               <div className="mb-4 flex justify-center"><Clock size={40} className="text-omega-yellow"/></div>
-               <h4 className="text-xl font-bold mb-2">Efficiency</h4>
-               <p className="text-gray-400">Optimal cost efficiency through well-trained labor.</p>
-             </div>
-             <div className="p-6">
-               <div className="mb-4 flex justify-center"><Award size={40} className="text-omega-yellow"/></div>
-               <h4 className="text-xl font-bold mb-2">Innovation</h4>
-               <p className="text-gray-400">Value-added services and continuous expansion into specialized activities.</p>
-             </div>
-             <div className="p-6">
-               <div className="mb-4 flex justify-center"><Target size={40} className="text-omega-yellow"/></div>
-               <h4 className="text-xl font-bold mb-2">Expansion</h4>
-               <p className="text-gray-400">Supporting drilling operations, marine transport, and heavy equipment maintenance.</p>
-             </div>
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-12 md:p-20 text-center border border-gray-100 dark:border-slate-700 transition-colors">
+          <h2 className="text-3xl font-display font-bold text-omega-dark dark:text-white mb-16">
+            {isAr ? 'قيمنا الأساسية' : 'OUR CORE VALUES'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            <div><Shield size={48} className="mx-auto text-omega-blue dark:text-omega-yellow mb-6" /><h3 className="text-xl font-bold text-omega-dark dark:text-white mb-3">{isAr ? 'السلامة أولاً' : 'Safety First'}</h3><p className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? 'لا مساومة على سلامة فريقنا.' : 'Zero compromise on the well-being of our team.'}</p></div>
+            <div><Award size={48} className="mx-auto text-omega-blue dark:text-omega-yellow mb-6" /><h3 className="text-xl font-bold text-omega-dark dark:text-white mb-3">{isAr ? 'التميز' : 'Excellence'}</h3><p className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? 'تقديم أعلى معايير الجودة.' : 'Delivering the highest quality standards.'}</p></div>
+            <div><Users size={48} className="mx-auto text-omega-blue dark:text-omega-yellow mb-6" /><h3 className="text-xl font-bold text-omega-dark dark:text-white mb-3">{isAr ? 'الشراكة' : 'Partnership'}</h3><p className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? 'بناء علاقات طويلة الأمد مبنية على الثقة.' : 'Building long-term, trust-based relationships.'}</p></div>
+            <div><Zap size={48} className="mx-auto text-omega-blue dark:text-omega-yellow mb-6" /><h3 className="text-xl font-bold text-omega-dark dark:text-white mb-3">{isAr ? 'الابتكار' : 'Innovation'}</h3><p className="text-gray-500 dark:text-gray-400 text-sm">{isAr ? 'التبني المستمر للتكنولوجيا الحديثة.' : 'Continuously adopting new technologies.'}</p></div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

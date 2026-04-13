@@ -1,21 +1,27 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ServiceItem, InspectionCertificate, ProjectUpdate, BlogPost, JobPosition, CompanyInfo } from '../types';
+import { ServiceItem, InspectionCertificate, ProjectUpdate, BlogPost, JobPosition, CompanyInfo, HomePageContent, AboutPageContent } from '../types';
 import { api } from '../services/api';
 
 interface DataContextType {
   companyInfo: CompanyInfo;
   updateCompanyInfo: (info: CompanyInfo) => Promise<void>;
+  
+  homeContent: HomePageContent;
+  updateHomeContent: (content: HomePageContent) => Promise<void>;
+
+  aboutContent: AboutPageContent;
+  updateAboutContent: (content: AboutPageContent) => Promise<void>;
+
   services: ServiceItem[];
   updateServices: (services: ServiceItem[]) => Promise<void>;
+  
   certificates: InspectionCertificate[];
-  updateCertificates: (certs: InspectionCertificate[]) => Promise<void>;
+  updateCertificates: () => Promise<void>;
+  
   projects: ProjectUpdate[];
-  updateProjects: (projects: ProjectUpdate[]) => Promise<void>;
   blogPosts: BlogPost[];
-  addBlogPost: (post: BlogPost) => Promise<void>;
   jobs: JobPosition[];
-  addJob: (job: JobPosition) => Promise<void>;
+  
   loading: boolean;
   refreshData: () => Promise<void>;
 }
@@ -24,9 +30,9 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  
-  // State
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({} as CompanyInfo);
+  const [homeContent, setHomeContent] = useState<HomePageContent>({} as HomePageContent);
+  const [aboutContent, setAboutContent] = useState<AboutPageContent>({} as AboutPageContent);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [certificates, setCertificates] = useState<InspectionCertificate[]>([]);
   const [projects, setProjects] = useState<ProjectUpdate[]>([]);
@@ -35,8 +41,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshData = async () => {
     try {
-      const [infoData, servicesData, certsData, projectsData, blogData, jobsData] = await Promise.all([
+      const [infoData, homeData, aboutData, servicesData, certsData, projsData, blogsData, jobsData] = await Promise.all([
         api.company.get(),
+        api.homePage.get(),
+        api.aboutPage.get(),
         api.services.getAll(),
         api.certificates.getAll(),
         api.projects.getAll(),
@@ -45,69 +53,34 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
 
       setCompanyInfo(infoData);
+      setHomeContent(homeData);
+      setAboutContent(aboutData);
       setServices(servicesData);
       setCertificates(certsData);
-      setProjects(projectsData);
-      setBlogPosts(blogData);
+      setProjects(projsData);
+      setBlogPosts(blogsData);
       setJobs(jobsData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error("Failed to fetch data:", error); } 
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    refreshData();
-  }, []);
+  useEffect(() => { refreshData(); }, []);
 
-  // Update Wrappers
-  const updateCompanyInfo = async (info: CompanyInfo) => {
-    await api.company.update(info);
-    setCompanyInfo(info);
-  };
-
-  const updateServices = async (newServices: ServiceItem[]) => {
-    await api.services.update(newServices);
-    setServices(newServices);
-  };
-
-  const updateCertificates = async (certs: InspectionCertificate[]) => {
-    await api.certificates.update(certs);
-    setCertificates(certs);
-  };
-
-  const updateProjects = async (projs: ProjectUpdate[]) => {
-    await api.projects.update(projs);
-    setProjects(projs);
-  };
-
-  const addBlogPost = async (post: BlogPost) => {
-    await api.blog.create(post);
-    setBlogPosts(prev => [post, ...prev]);
-  };
-
-  const addJob = async (job: JobPosition) => {
-    // Add API call here if needed
-    setJobs(prev => [job, ...prev]);
-  };
+  const updateCompanyInfo = async (info: CompanyInfo) => { await api.company.update(info); setCompanyInfo(info); };
+  const updateHomeContent = async (content: HomePageContent) => { await api.homePage.update(content); await refreshData(); };
+  const updateAboutContent = async (content: AboutPageContent) => { await api.aboutPage.update(content); await refreshData(); };
+  const updateServices = async (newServices: ServiceItem[]) => { await api.services.update(newServices); setServices(newServices); };
+  const updateCertificates = async () => { await refreshData(); };
 
   return (
     <DataContext.Provider value={{
-      companyInfo,
-      updateCompanyInfo,
-      services,
-      updateServices,
-      certificates,
-      updateCertificates,
-      projects,
-      updateProjects,
-      blogPosts,
-      addBlogPost,
-      jobs,
-      addJob,
-      loading,
-      refreshData
+      companyInfo, updateCompanyInfo,
+      homeContent, updateHomeContent,
+      aboutContent, updateAboutContent,
+      services, updateServices,
+      certificates, updateCertificates,
+      projects, blogPosts, jobs,
+      loading, refreshData
     }}>
       {children}
     </DataContext.Provider>
@@ -116,8 +89,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (context === undefined) throw new Error('useData must be used within a DataProvider');
   return context;
 };

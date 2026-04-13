@@ -1,17 +1,23 @@
 export interface ServiceItem {
   id: string;
   title: string;
+  titleAr?: string;
   shortDescription: string;
+  shortDescriptionAr?: string;
   fullDescription: string;
-  iconName: string; // Mapping to Lucide icons
+  fullDescriptionAr?: string;
+  iconName: string;
   features: string[];
+  featuresAr?: string[];
   image?: string;
 }
 
 export interface Industry {
   id: string;
   title: string;
+  titleAr?: string;
   description: string;
+  descriptionAr?: string;
   image: string;
 }
 
@@ -33,6 +39,7 @@ export interface InspectionCertificate {
   status: 'valid' | 'expiring' | 'expired';
   pdfUrl: string;
   clientId?: string; 
+  companyName?: string;
 }
 
 export interface ProjectStage {
@@ -60,8 +67,10 @@ export interface ChatMessage {
 
 export interface WhyChooseUsItem {
   title: string;
+  titleAr?: string;
   description: string;
-  icon: string;
+  descriptionAr?: string;
+  icon?: string;
 }
 
 export interface BlogPost {
@@ -97,4 +106,47 @@ export interface CompanyInfo {
   address: string;
   mission: string;
   vision: string;
+}
+
+export interface StatItem {
+  label: string;
+  labelAr?: string;
+  val: string;
+}
+
+export interface HomePageContent {
+  heroTitle: string;
+  heroTitleAr?: string;
+  heroHighlight: string;
+  heroHighlightAr?: string;
+  heroSubtitle: string;
+  heroSubtitleAr?: string;
+  heroImage: string;
+  
+  stats: StatItem[];
+  
+  industriesTitle?: string;
+  industriesTitleAr?: string;
+  industriesSubtitle?: string;
+  industriesSubtitleAr?: string;
+  industries?: Industry[];
+  
+  whyChooseUsTitle?: string;
+  whyChooseUsTitleAr?: string;
+  whyChooseUsImage?: string;
+  whyChooseUsItems?: WhyChooseUsItem[];
+}
+
+export interface AboutPageContent {
+  title: string;
+  titleAr?: string;
+  subtitle: string;
+  subtitleAr?: string;
+  story: string;
+  storyAr?: string;
+  mission: string;
+  missionAr?: string;
+  vision: string;
+  visionAr?: string;
+  coverImage: string;
 }

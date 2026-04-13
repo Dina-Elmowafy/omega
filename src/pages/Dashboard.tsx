@@ -20,7 +20,7 @@ import Logo from '../components/Logo';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { certificates, projects } = useData();
+  const { certificates, projects, updateProjects } = useData();
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'certificates' | 'projects'>('overview');
 

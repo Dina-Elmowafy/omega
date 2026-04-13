@@ -1,169 +1,125 @@
-import { ServiceItem, InspectionCertificate, ProjectUpdate, CompanyInfo, User, BlogPost, JobPosition } from '../types';
-import { SERVICES, COMPANY_INFO, MOCK_CERTIFICATES, MOCK_PROJECTS } from '../constants';
+import { User, CompanyInfo, ServiceItem, InspectionCertificate, ProjectUpdate, BlogPost, JobPosition, HomePageContent, AboutPageContent } from '../types';
+import { db } from '../firebase';
+import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { COMPANY_INFO, SERVICES, MOCK_PROJECTS, INDUSTRIES, WHY_CHOOSE_US } from '../constants';
 
-// --- CONFIGURATION ---
-// Default to TRUE so it works immediately. Set to FALSE to use real backend.
-const USE_MOCK = true; 
-const API_URL = 'http://localhost:5000/api';
-
-// --- MOCK STORAGE HELPER ---
-const getStorage = <T>(key: string, initial: T): T => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : initial;
-  } catch (e) {
-    return initial;
-  }
-};
-
-const setStorage = (key: string, data: any) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-// --- API SERVICE CLASS ---
 export const api = {
-  
-  // 1. AUTHENTICATION
   auth: {
     login: async (email: string, password: string): Promise<{ user: User, token: string }> => {
-      if (USE_MOCK) {
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            const isAdmin = email.includes('admin');
-            // Read admin secret from environment variable to avoid embedding it in source
-            const ADMIN_PASSWORD = (import.meta as any).env?.VITE_ADMIN_PASSWORD as string | undefined;
-            if (isAdmin) {
-              // Use environment password if set, otherwise use default for demo
-              const validPassword = ADMIN_PASSWORD || 'admin123';
-              if (password === validPassword) {
-                const user: User = {
-                  id: 'admin-1',
-                  name: 'System Administrator',
-                  companyName: 'OMEGA Internal',
-                  role: 'admin',
-                  email,
-                  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-                };
-                resolve({ user, token: 'mock-jwt-token-123' });
-                return;
-              }
-              reject(new Error('Invalid credentials'));
-              return;
-            }
-            // Non-admin users not allowed in this app
-            reject(new Error('Client access not allowed'));
-          }, 800);
-        });
-      } else {
-        const res = await fetch(`${API_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        if (!res.ok) throw new Error('Login failed');
-        return res.json();
-      }
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const isAdmin = email.includes('admin');
+          if (isAdmin && password === 'admin123') {
+            const user: User = { id: 'admin-1', name: 'System Admin', companyName: 'OMEGA', role: 'admin', email, avatar: '' };
+            resolve({ user, token: 'mock-jwt-token' });
+          } else {
+            reject(new Error('Invalid credentials'));
+          }
+        }, 800);
+      });
     }
   },
 
-  // 2. COMPANY INFO (CMS)
   company: {
     get: async (): Promise<CompanyInfo> => {
-      if (USE_MOCK) return getStorage('omega_companyInfo', COMPANY_INFO);
-      const res = await fetch(`${API_URL}/content/company-info`);
-      return res.json();
+      try {
+        const docSnap = await getDoc(doc(db, "content", "company"));
+        if (docSnap.exists()) return docSnap.data() as CompanyInfo;
+      } catch (error) {}
+      return COMPANY_INFO;
     },
     update: async (data: CompanyInfo): Promise<void> => {
-      if (USE_MOCK) return setStorage('omega_companyInfo', data);
-      await fetch(`${API_URL}/content/company-info`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
-        body: JSON.stringify(data)
-      });
+      await setDoc(doc(db, "content", "company"), data);
     }
   },
 
-  // 3. SERVICES
+  homePage: {
+    get: async (): Promise<HomePageContent> => {
+      try {
+        const docSnap = await getDoc(doc(db, "content", "home"));
+        if (docSnap.exists()) {
+          const data = docSnap.data() as HomePageContent;
+          return {
+            ...data,
+            industriesTitle: data.industriesTitle || "INDUSTRIES WE SERVE",
+            industriesSubtitle: data.industriesSubtitle || "Delivering strategic solutions across vital sectors...",
+            industries: data.industries?.length ? data.industries : INDUSTRIES,
+            whyChooseUsTitle: data.whyChooseUsTitle || "WHY CHOOSE OMEGA?",
+            whyChooseUsImage: data.whyChooseUsImage || "image/WHY CHOOSE OMEGA.png",
+            whyChooseUsItems: data.whyChooseUsItems?.length ? data.whyChooseUsItems : WHY_CHOOSE_US
+          };
+        }
+      } catch (error) {}
+      return {
+        heroTitle: "ALWAYS DELIVER \n", 
+        heroTitleAr: "نحن دائماً نقدم \n",
+        heroHighlight: "MORE THAN EXPECTED", 
+        heroHighlightAr: "أكثر مما تتوقع",
+        heroSubtitle: "Your trusted partner for Inspection, NDT, and Construction Services.", 
+        heroSubtitleAr: "شريكك الموثوق لخدمات الفحص والاختبارات غير الإتلافية وخدمات البناء.",
+        heroImage: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80",
+        stats: [ 
+          { label: "Completed Projects", labelAr: "مشاريع مكتملة", val: "150+" }, 
+          { label: "Certified Staff", labelAr: "موظف معتمد", val: "50+" }, 
+          { label: "Years Experience", labelAr: "سنوات خبرة", val: "5+" }, 
+          { label: "Clients Served", labelAr: "عملاء خدمناهم", val: "40+" } 
+        ],
+        industriesTitle: "INDUSTRIES WE SERVE", 
+        industriesTitleAr: "القطاعات التي نخدمها",
+        industriesSubtitle: "Delivering strategic solutions across vital sectors...", 
+        industriesSubtitleAr: "نقدم حلولاً استراتيجية عبر القطاعات الحيوية التي تتضمن بنية تحتية عالية التكلفة وعمليات معقدة.",
+        industries: INDUSTRIES,
+        whyChooseUsTitle: "WHY CHOOSE OMEGA?", 
+        whyChooseUsTitleAr: "لماذا تختار أوميجا؟",
+        whyChooseUsImage: "image/WHY CHOOSE OMEGA.png", 
+        whyChooseUsItems: WHY_CHOOSE_US
+      };
+    },
+    update: async (data: HomePageContent): Promise<void> => {
+      await setDoc(doc(db, "content", "home"), data);
+    }
+  },
+
+  aboutPage: {
+    get: async (): Promise<AboutPageContent> => {
+      try {
+        const docSnap = await getDoc(doc(db, "content", "about"));
+        if (docSnap.exists()) return docSnap.data() as AboutPageContent;
+      } catch (error) {}
+      return {
+        title: "WHO WE ARE", subtitle: "Excellence in Engineering & Industrial Services", story: "Founded by a team of visionary engineers...", mission: "To deliver superior inspection...", vision: "To be the undisputed leader...", coverImage: "https://images.unsplash.com/photo-1504307651254-35680f356f58?auto=format&fit=crop&q=80"
+      };
+    },
+    update: async (data: AboutPageContent): Promise<void> => {
+      await setDoc(doc(db, "content", "about"), data);
+    }
+  },
+
   services: {
     getAll: async (): Promise<ServiceItem[]> => {
-      if (USE_MOCK) {
-        const stored = localStorage.getItem('omega_services');
-        // إذا لم توجد بيانات محفوظة، استخدم SERVICES الافتراضية فقط مرة واحدة
-        if (!stored) {
-          localStorage.setItem('omega_services', JSON.stringify(SERVICES));
-          return SERVICES;
-        }
-        return getStorage('omega_services', SERVICES);
-      }
-      const res = await fetch(`${API_URL}/services`);
-      return res.json();
+      try {
+        const querySnapshot = await getDocs(collection(db, "services"));
+        if (!querySnapshot.empty) return querySnapshot.docs.map(doc => doc.data() as ServiceItem);
+      } catch (error) {}
+      return SERVICES;
     },
     update: async (data: ServiceItem[]): Promise<void> => {
-      if (USE_MOCK) {
-        // تأكد من عدم وجود نسخ مزدوجة: احذف النسخ المكررة بناءً على الـ ID
-        const uniqueServices = Array.from(
-          new Map(data.map(s => [s.id, s])).values()
-        );
-        return setStorage('omega_services', uniqueServices);
-      }
-      await fetch(`${API_URL}/services`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify(data) 
-      });
+      for (const service of data) { await setDoc(doc(db, "services", service.id), service); }
     }
   },
 
-  // 4. CERTIFICATES
   certificates: {
     getAll: async (): Promise<InspectionCertificate[]> => {
-      if (USE_MOCK) return getStorage('omega_certificates', MOCK_CERTIFICATES);
-      const res = await fetch(`${API_URL}/certificates`, {
-         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      return res.json();
+      try {
+        const querySnapshot = await getDocs(collection(db, "certificates"));
+        return querySnapshot.docs.map(doc => doc.data() as InspectionCertificate);
+      } catch (error) { return []; }
     },
-    update: async (data: InspectionCertificate[]): Promise<void> => {
-      if (USE_MOCK) return setStorage('omega_certificates', data);
-    }
+    addOrUpdate: async (cert: InspectionCertificate): Promise<void> => { await setDoc(doc(db, "certificates", cert.id), cert); },
+    delete: async (id: string): Promise<void> => { await deleteDoc(doc(db, "certificates", id)); }
   },
 
-  // 5. PROJECTS
-  projects: {
-    getAll: async (): Promise<ProjectUpdate[]> => {
-      if (USE_MOCK) return getStorage('omega_projects', MOCK_PROJECTS);
-      const res = await fetch(`${API_URL}/projects`);
-      return res.json();
-    },
-    update: async (data: ProjectUpdate[]): Promise<void> => {
-      if (USE_MOCK) return setStorage('omega_projects', data);
-    }
-  },
-  
-  // 6. BLOG
-  blog: {
-    getAll: async (): Promise<BlogPost[]> => {
-      if (USE_MOCK) return getStorage('omega_blogPosts', []);
-      const res = await fetch(`${API_URL}/blog`);
-      return res.json();
-    },
-    create: async (post: BlogPost): Promise<void> => {
-      if (USE_MOCK) {
-        const posts = getStorage<BlogPost[]>('omega_blogPosts', []);
-        setStorage('omega_blogPosts', [post, ...posts]);
-        return;
-      }
-    }
-  },
-
-  // 7. JOBS
-  jobs: {
-    getAll: async (): Promise<JobPosition[]> => {
-      if (USE_MOCK) return getStorage('omega_jobs', []);
-      return [];
-    }
-  }
+  projects: { getAll: async () => MOCK_PROJECTS, update: async () => {} },
+  blog: { getAll: async () => [], create: async () => {} },
+  jobs: { getAll: async () => [] }
 };

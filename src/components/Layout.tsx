@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Phone, User, ChevronRight, Facebook, Linkedin, Instagram, Moon, Sun, MessageCircle, LogOut } from 'lucide-react';
+import { Menu, X, Phone, User, ChevronRight, Facebook, Linkedin, Instagram, Moon, Sun, MessageCircle, LogOut, Globe } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import Logo from './Logo';
 
 interface LayoutProps {
@@ -12,17 +14,17 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem('theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  
   const location = useLocation();
   const navigate = useNavigate();
   const { companyInfo } = useData();
   const { user, logout } = useAuth();
-
+  
+  // استخدام الـ Contexts الجديدة الخاصة باللغة والثيم
+  const { theme, toggleTheme } = useTheme();
+  const { language, toggleLanguage, t } = useLanguage();
+  
+  const isDarkMode = theme === 'dark';
   const isDashboard = location.pathname.startsWith('/admin');
 
   useEffect(() => {
@@ -33,25 +35,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // keep document + localStorage in sync with state
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
-
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Services', path: '/services' },
-    { name: 'Who We Are', path: '/about' },
-    { name: 'News', path: '/blog' },
-    { name: 'Contact', path: '/contact' },
+    { name: t('home'), path: '/' },
+    { name: t('services'), path: '/services' },
+    { name: t('about'), path: '/about' },
+    { name: t('news'), path: '/blog' },
+    { name: t('contact'), path: '/contact' },
   ];
 
   const handleLogout = () => {
@@ -59,6 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/');
   };
 
+  // إخفاء الـ Layout بالكامل من صفحة لوحة التحكم لأن لها تصميم خاص
   if (isDashboard) {
     return <>{children}</>;
   }
@@ -101,15 +91,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Admin
               </Link>
             )}
-            
-            <button 
-              onClick={toggleDarkMode}
-              aria-label="Toggle theme"
-              aria-pressed={isDarkMode}
-              className={`p-2 rounded-full transition-colors ${isScrolled || location.pathname !== '/' ? 'text-gray-200 hover:bg-white/10' : 'text-white hover:bg-black/10'}`}
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+
+            <div className="flex items-center gap-4 ml-2 border-l border-white/20 pl-4">
+              {/* Language Toggle Button */}
+              <button 
+                onClick={toggleLanguage}
+                aria-label="Toggle Language"
+                className={`flex items-center gap-1.5 font-bold text-sm tracking-wide transition-colors ${
+                  (isScrolled || location.pathname !== '/') ? 'text-gray-200 hover:text-omega-yellow' : 'text-white hover:text-gray-300'
+                }`}
+              >
+                <Globe size={18} />
+                {language === 'en' ? 'AR' : 'EN'}
+              </button>
+              
+              {/* Theme Toggle Button */}
+              <button 
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className={`p-2 rounded-full transition-colors ${
+                  isScrolled || location.pathname !== '/' ? 'text-gray-200 hover:bg-white/10' : 'text-white hover:bg-black/10'
+                }`}
+              >
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            </div>
 
             {user ? (
               <button 
@@ -117,7 +123,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className="flex items-center gap-2 px-5 py-2 bg-red-600 text-white font-bold text-xs uppercase tracking-wide hover:bg-red-700 transition-all duration-300 rounded-full shadow-md hover:shadow-lg"
               >
                 <LogOut size={14} />
-                Logout
+                {t('logout')}
               </button>
             ) : (
               <button 
@@ -125,77 +131,91 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className="flex items-center gap-2 px-5 py-2 bg-omega-yellow text-omega-dark font-bold text-xs uppercase tracking-wide hover:bg-white hover:text-omega-blue transition-all duration-300 rounded-full shadow-md hover:shadow-lg"
               >
                 <User size={14} />
-                Portal
+                {t('portal')}
               </button>
             )}
           </div>
 
           {/* Mobile Menu Toggle */}
           <button 
-            className="lg:hidden text-white"
+            className="lg:hidden text-white p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X /> : <Menu />}
+            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-omega-dark border-t border-slate-800 shadow-xl flex flex-col p-6 space-y-4 animate-in slide-in-from-top-5">
-             {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className="text-white text-lg font-display uppercase tracking-wider hover:text-omega-yellow"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.name}
-              </Link>
-            ))}
+          <div className="lg:hidden absolute top-full left-0 w-full bg-omega-dark border-t border-slate-800 shadow-xl flex flex-col p-6 space-y-6 animate-in slide-in-from-top-5">
+             <div className="flex flex-col space-y-4">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="text-white text-lg font-display uppercase tracking-wider hover:text-omega-yellow"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                
+                {user && user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="text-white text-lg font-display uppercase tracking-wider hover:text-omega-yellow"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
+             </div>
             
-            {user && user.role === 'admin' && (
-              <Link
-                to="/admin"
-                className="text-white text-lg font-display uppercase tracking-wider hover:text-omega-yellow"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
-            
-            <button 
-               onClick={() => {
-                 setIsDarkMode(prev => !prev);
-                 setIsMobileMenuOpen(false);
-               }}
-               className="w-full py-3 bg-white/5 text-white font-bold uppercase rounded-full flex items-center justify-center gap-3"
-               aria-label="Toggle theme"
-            >
-               {isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-            </button>
+             <div className="flex flex-col gap-3 pt-4 border-t border-slate-700">
+                <button 
+                  onClick={() => {
+                    toggleLanguage();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full py-3 bg-white/5 text-white font-bold uppercase rounded-full flex items-center justify-center gap-3"
+                >
+                  <Globe size={18} /> {language === 'en' ? 'اللغة العربية' : 'English'}
+                </button>
 
-            {user ? (
-              <button 
-                onClick={() => {
-                  handleLogout();
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full py-3 bg-red-600 text-white font-bold uppercase rounded-full flex items-center justify-center gap-3"
-              >
-                <LogOut size={16} />
-                Logout
-              </button>
-            ) : (
-              <button 
-                onClick={() => {
-                  navigate('/login');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full py-3 bg-omega-yellow text-omega-dark font-bold uppercase rounded-full"
-              >
-                Client Login
-              </button>
-            )}
+                <button 
+                   onClick={() => {
+                     toggleTheme();
+                     setIsMobileMenuOpen(false);
+                   }}
+                   className="w-full py-3 bg-white/5 text-white font-bold uppercase rounded-full flex items-center justify-center gap-3"
+                >
+                   {isDarkMode ? <Sun size={18} /> : <Moon size={18} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+
+                {user ? (
+                  <button 
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full py-3 bg-red-600 text-white font-bold uppercase rounded-full flex items-center justify-center gap-3 mt-2"
+                  >
+                    <LogOut size={18} />
+                    {t('logout')}
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      navigate('/login');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full py-3 bg-omega-yellow text-omega-dark font-bold uppercase rounded-full flex items-center justify-center gap-3 mt-2"
+                  >
+                    <User size={18} />
+                    {t('portal')}
+                  </button>
+                )}
+             </div>
           </div>
         )}
       </nav>
@@ -222,7 +242,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
-            <Logo variant="light" className="mb-6 scale-90 origin-left" />
+            <Logo variant="light" className="mb-6 scale-90 origin-left rtl:origin-right" />
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               {companyInfo.slogan}
             </p>
@@ -237,9 +257,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div>
             <h4 className="text-lg font-bold mb-6 font-display uppercase tracking-widest">Quick Links</h4>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li><Link to="/about" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow"/> Who We Are</Link></li>
-              <li><Link to="/services" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow"/> Our Services</Link></li>
-              <li><Link to="/blog" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow"/> Latest News</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow rtl:rotate-180"/> {t('about')}</Link></li>
+              <li><Link to="/services" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow rtl:rotate-180"/> {t('services')}</Link></li>
+              <li><Link to="/blog" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight size={14} className="text-omega-yellow rtl:rotate-180"/> {t('news')}</Link></li>
             </ul>
           </div>
 
@@ -261,15 +281,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="space-y-4 text-sm text-gray-400">
               <p className="flex items-start gap-3">
                 <span className="text-omega-yellow mt-1">📍</span>
-                <span className="text-xs">{companyInfo.address}</span>
+                <span className="text-xs leading-relaxed">{companyInfo.address}</span>
               </p>
               <p className="flex items-center gap-3">
                 <Phone size={16} className="text-omega-yellow" />
-                <a href={companyInfo.whatsapp} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline" aria-label={`Chat on WhatsApp ${companyInfo.phone}`}>{companyInfo.phone}</a>
+                <a href={companyInfo.whatsapp} target="_blank" rel="noopener noreferrer" className="text-xs hover:text-omega-yellow transition-colors rtl:tracking-widest" aria-label={`Chat on WhatsApp ${companyInfo.phone}`}>{companyInfo.phone}</a>
               </p>
               <p className="flex items-center gap-3">
                 <span className="text-omega-yellow">✉️</span>
-                <a href={`mailto:${companyInfo.email}`} className="text-xs hover:underline" aria-label={`Email ${companyInfo.email}`}>{companyInfo.email}</a>
+                <a href={`mailto:${companyInfo.email}`} className="text-xs hover:text-omega-yellow transition-colors" aria-label={`Email ${companyInfo.email}`}>{companyInfo.email}</a>
               </p>
             </div>
           </div>
@@ -278,8 +298,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-6 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-gray-500 flex justify-between items-center flex-col md:flex-row">
           <p>© {new Date().getFullYear()} {companyInfo.name}. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white">Privacy Policy</a>
-            <a href="#" className="hover:text-white">Terms of Service</a>
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
           </div>
         </div>
       </footer>

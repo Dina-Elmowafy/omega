@@ -1,129 +1,121 @@
-import React from 'react';
-import { Phone, Mail, MapPin, Clock, MessageCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Phone, Mail, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
+import toast from 'react-hot-toast';
+import emailjs from '@emailjs/browser';
 import { COMPANY_INFO } from '../constants';
+import { Helmet } from 'react-helmet-async';
 
 const Contact: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    service: '',
+    message: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // ⚠️ استبدلي هذه القيم ببيانات حسابك من موقع EmailJS
+      const serviceId = 'YOUR_SERVICE_ID';
+      const templateId = 'YOUR_TEMPLATE_ID';
+      const publicKey = 'YOUR_PUBLIC_KEY';
+
+      await emailjs.send(serviceId, templateId, formData, publicKey);
+      
+      toast.success('Message sent successfully! We will contact you soon.');
+      setFormData({ name: '', phone: '', email: '', service: '', message: '' });
+    } catch (error) {
+      toast.error('Failed to send message. Please try again later.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="pt-20 min-h-screen bg-white">
-      {/* Header */}
+    <div className="pt-20 min-h-screen bg-white dark:bg-slate-900 transition-colors duration-300">
+      <Helmet>
+        <title>Contact Us - OMEGA Petroleum & Construction Services</title>
+        <meta name="description" content="Get in touch with OMEGA for industrial inspections, rope access, and NDT services in Egypt." />
+      </Helmet>
+
       <div className="bg-omega-dark py-20 text-center text-white">
         <h1 className="text-5xl font-display font-bold mb-4">CONTACT US</h1>
-        <p className="text-gray-400 max-w-xl mx-auto">We are available for inquiries and emergency support. Reach out to our team in Cairo.</p>
+        <p className="text-gray-400 max-w-xl mx-auto">We are available for inquiries and emergency support. Reach out to our team.</p>
       </div>
 
       <div className="container mx-auto px-6 py-16">
         <div className="flex flex-col lg:flex-row gap-16">
           
-          {/* Info Side */}
           <div className="lg:w-5/12 space-y-8">
-            <h3 className="text-3xl font-display font-bold text-omega-dark mb-2">Get in Touch</h3>
-            <p className="text-gray-600 mb-8">Have a project in mind? Send us a message or visit our office.</p>
+            <h3 className="text-3xl font-display font-bold text-omega-dark dark:text-white mb-2">Get in Touch</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">Have a project in mind? Send us a message or visit our office.</p>
             
             <div className="space-y-6">
               <div className="flex items-start gap-5 group">
-                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform">
-                  <MapPin size={24} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-800 text-lg">Head Office</h4>
-                  <p className="text-gray-600 mt-1 leading-relaxed">
-                    Shebin Hathout Tower, next to Al-Ghatmi Mall,<br/>
-                    in front of Shebin Al-Koum Preparatory School,<br/>
-                    Cairo, Egypt
-                  </p>
-                </div>
+                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform"><MapPin size={24} /></div>
+                <div><h4 className="font-bold text-gray-800 dark:text-white text-lg">Head Office</h4><p className="text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{COMPANY_INFO.address}</p></div>
               </div>
-
               <div className="flex items-start gap-5 group">
-                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform">
-                  <Phone size={24} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-800 text-lg">Phone Support</h4>
-                  <p className="text-gray-600 mt-1">{COMPANY_INFO.phone}</p>
-                  <a href={COMPANY_INFO.whatsapp} target="_blank" rel="noreferrer" className="text-green-600 font-bold text-sm mt-2 inline-flex items-center gap-1 hover:underline">
-                    <MessageCircle size={14} /> Chat on WhatsApp
-                  </a>
-                </div>
+                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform"><Phone size={24} /></div>
+                <div><h4 className="font-bold text-gray-800 dark:text-white text-lg">Phone Support</h4><p className="text-gray-600 dark:text-gray-400 mt-1">{COMPANY_INFO.phone}</p></div>
               </div>
-
               <div className="flex items-start gap-5 group">
-                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform">
-                  <Mail size={24} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-800 text-lg">Email</h4>
-                  <p className="text-gray-600 mt-1">{COMPANY_INFO.email}</p>
-                </div>
+                <div className="bg-omega-yellow text-omega-dark p-4 rounded shadow-sm group-hover:scale-110 transition-transform"><Mail size={24} /></div>
+                <div><h4 className="font-bold text-gray-800 dark:text-white text-lg">Email</h4><p className="text-gray-600 dark:text-gray-400 mt-1">{COMPANY_INFO.email}</p></div>
               </div>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 mt-8">
-              <h4 className="font-bold text-omega-dark mb-2 flex items-center gap-2"><Clock size={18}/> Business Hours</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li className="flex justify-between"><span>Sunday - Thursday:</span> <span className="font-bold">9:00 AM - 5:00 PM</span></li>
-                <li className="flex justify-between"><span>Friday - Saturday:</span> <span className="font-bold">Closed</span></li>
-              </ul>
             </div>
           </div>
 
-          {/* Form Side */}
           <div className="lg:w-7/12">
-             <form className="bg-white p-8 md:p-10 rounded-xl shadow-lg border-t-4 border-omega-yellow">
-               <h3 className="text-2xl font-bold text-omega-dark mb-8">Send a Request</h3>
+             <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-xl shadow-lg border-t-4 border-omega-yellow transition-colors">
+               <h3 className="text-2xl font-bold text-omega-dark dark:text-white mb-8">Send a Request</h3>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                  <div>
-                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                   <input type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-omega-yellow focus:bg-white focus:outline-none transition-colors" placeholder="John Doe" />
+                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Full Name</label>
+                   <input required name="name" value={formData.name} onChange={handleChange} type="text" className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white rounded-lg focus:border-omega-yellow outline-none" placeholder="John Doe" />
                  </div>
                  <div>
-                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Phone Number</label>
-                   <input type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-omega-yellow focus:bg-white focus:outline-none transition-colors" placeholder="+20..." />
+                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Phone Number</label>
+                   <input required name="phone" value={formData.phone} onChange={handleChange} type="text" className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white rounded-lg focus:border-omega-yellow outline-none" placeholder="+20..." />
                  </div>
                </div>
                
                <div className="mb-6">
-                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                 <input type="email" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-omega-yellow focus:bg-white focus:outline-none transition-colors" placeholder="name@company.com" />
+                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Email Address</label>
+                 <input required name="email" value={formData.email} onChange={handleChange} type="email" className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white rounded-lg focus:border-omega-yellow outline-none" placeholder="name@company.com" />
                </div>
                
                <div className="mb-6">
-                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Service of Interest</label>
-                 <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-omega-yellow focus:bg-white focus:outline-none transition-colors">
-                   <option>Select a service...</option>
-                   <option>Rope Access</option>
-                   <option>Lifting Inspection</option>
-                   <option>NDT Services</option>
-                   <option>Other</option>
+                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Service of Interest</label>
+                 <select required name="service" value={formData.service} onChange={handleChange} className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white rounded-lg focus:border-omega-yellow outline-none">
+                   <option value="">Select a service...</option>
+                   <option value="Rope Access">Rope Access</option>
+                   <option value="Lifting Inspection">Lifting Inspection</option>
+                   <option value="NDT Services">NDT Services</option>
+                   <option value="Other">Other</option>
                  </select>
                </div>
                
                <div className="mb-8">
-                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Message Details</label>
-                 <textarea rows={4} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-omega-yellow focus:bg-white focus:outline-none transition-colors" placeholder="Tell us about your project..."></textarea>
+                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Message Details</label>
+                 <textarea required name="message" value={formData.message} onChange={handleChange} rows={4} className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white rounded-lg focus:border-omega-yellow outline-none" placeholder="Tell us about your project..."></textarea>
                </div>
                
-               <button className="w-full bg-omega-dark text-white py-4 font-bold uppercase tracking-wide rounded-full hover:bg-omega-blue transition-all shadow-lg transform hover:-translate-y-1">
-                 Submit Inquiry
+               <button disabled={loading} type="submit" className="w-full bg-omega-dark dark:bg-omega-yellow dark:text-omega-dark text-white py-4 font-bold uppercase tracking-wide rounded-full hover:bg-omega-blue transition-all shadow-lg flex justify-center items-center gap-2">
+                 {loading ? <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span> : <><Send size={18} /> Submit Inquiry</>}
                </button>
              </form>
-          </div>
-        </div>
-
-        {/* Map Placeholder */}
-        <div className="mt-20 rounded-lg overflow-hidden h-80 shadow-lg relative bg-gray-200 flex items-center justify-center group">
-          <div className="text-center">
-             <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
-             <p className="text-gray-500 font-bold">Interactive Map Component</p>
-             <p className="text-xs text-gray-400">(Google Maps Embed Placeholder)</p>
-          </div>
-          {/* Simulate Map UI */}
-          <div className="absolute top-4 left-4 bg-white p-2 shadow rounded">
-             <div className="flex flex-col gap-1">
-               <div className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xl font-bold text-gray-600">+</div>
-               <div className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xl font-bold text-gray-600">-</div>
-             </div>
           </div>
         </div>
       </div>
