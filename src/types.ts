@@ -41,10 +41,27 @@ export interface InspectionCertificate {
   expiryDate: string;
   status: 'valid' | 'expiring' | 'expired';
   equipmentStatus?: 'Accepted' | 'Rejected'; // حقل حالة المعدة الجديد
+  model?: string;
+  licenseOwnerName?: string;
+  licenseOwnerPhotoUrl?: string;
   pdfUrl: string;
   clientId?: string; 
   companyName?: string;
   companyNameAr?: string;
+}
+
+export interface LicenseRecord {
+  id: string;
+  equipmentName: string;
+  model?: string;
+  serialNumber: string;
+  inspectionDate: string;
+  expiryDate: string;
+  status: 'valid' | 'expiring' | 'expired';
+  pdfUrl: string;
+  companyName?: string;
+  licenseOwnerName?: string;
+  licenseOwnerPhotoUrl?: string;
 }
 
 export interface ProjectStage {

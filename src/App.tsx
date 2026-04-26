@@ -14,6 +14,8 @@ import Blog from './pages/Blog';
 import Chatbot from './components/Chatbot';
 import Preloader from './components/Preloader';
 import CertificateView from './pages/CertificateView';
+import LicensePage from './pages/LicensePage';
+import LicenseView from './pages/LicenseView';
 import Dashboard from './pages/Dashboard';
 import { DataProvider, useData } from './contexts/DataContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -34,6 +36,8 @@ const AppContent: React.FC = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/certificate/:id" element={<CertificateView />} />
+          <Route path="/license" element={<LicensePage />} />
+          <Route path="/license/:id" element={<LicenseView />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute requiredRole="client"><Dashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />

@@ -38,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks = [
     { name: t('home'), path: '/' },
     { name: t('services'), path: '/services' },
+    { name: t('license'), path: '/license' },
     { name: t('about'), path: '/about' },
     { name: t('news'), path: '/blog' },
     { name: t('contact'), path: '/contact' },

@@ -1,4 +1,4 @@
-import { User, CompanyInfo, ServiceItem, InspectionCertificate, HomePageContent, AboutPageContent } from '../types';
+import { User, CompanyInfo, ServiceItem, InspectionCertificate, LicenseRecord, HomePageContent, AboutPageContent } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { COMPANY_INFO, SERVICES, MOCK_PROJECTS, INDUSTRIES, WHY_CHOOSE_US } from '../constants';
@@ -117,6 +117,17 @@ export const api = {
     },
     addOrUpdate: async (cert: InspectionCertificate): Promise<void> => { await setDoc(doc(db, "certificates", cert.id), cert); },
     delete: async (id: string): Promise<void> => { await deleteDoc(doc(db, "certificates", id)); }
+  },
+
+  licenses: {
+    getAll: async (): Promise<LicenseRecord[]> => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "licenses"));
+        return querySnapshot.docs.map(doc => doc.data() as LicenseRecord);
+      } catch (error) { return []; }
+    },
+    addOrUpdate: async (license: LicenseRecord): Promise<void> => { await setDoc(doc(db, "licenses", license.id), license); },
+    delete: async (id: string): Promise<void> => { await deleteDoc(doc(db, "licenses", id)); }
   },
 
   projects: { getAll: async () => MOCK_PROJECTS, update: async () => {} },

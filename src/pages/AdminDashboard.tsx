@@ -2,22 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Settings, FileText, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Building2, Home, Info, X, Loader2 } from 'lucide-react';
+import { Settings, FileText, Shield, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Building2, Home, Info, X, Loader2 } from 'lucide-react';
 import Logo from '../components/Logo';
+import ImageEditor from '../components/ImageEditor';
 import { QRCodeCanvas } from 'qrcode.react';
 import { api } from '../services/api';
 import { HomePageContent, CompanyInfo, AboutPageContent } from '../types';
 import toast from 'react-hot-toast';
 
 const AdminDashboard: React.FC = () => {
-  const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, refreshData } = useData();
+  const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, licenses, refreshData } = useData();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'certificates'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'certificates' | 'licenses'>('general');
   const [editingService, setEditingService] = useState<any | null>(null);
   const [editingCert, setEditingCert] = useState<any | null>(null); 
+  const [editingLicense, setEditingLicense] = useState<any | null>(null);
   const [isSavingCert, setIsSavingCert] = useState(false);
+  const [imageEditorOpen, setImageEditorOpen] = useState(false);
+  const [imageEditorSource, setImageEditorSource] = useState('');
+  const [imageEditorCallback, setImageEditorCallback] = useState<((img: string) => void) | null>(null);
   
   const [localHomeContent, setLocalHomeContent] = useState<HomePageContent>(homeContent);
   const [localAboutContent, setLocalAboutContent] = useState<AboutPageContent>(aboutContent);
@@ -29,22 +34,59 @@ const AdminDashboard: React.FC = () => {
 
   if (!user || user.role !== 'admin') { navigate('/login'); return null; }
 
+  // === IMAGE EDITOR ===
+  const openImageEditor = (callback: (img: string) => void) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setImageEditorSource(result);
+          setImageEditorCallback(() => callback);
+          setImageEditorOpen(true);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
   // === GENERAL ===
   const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalCompanyInfo({ ...localCompanyInfo, [e.target.name]: e.target.value }); };
   const saveCompanyInfo = async () => { try { await updateCompanyInfo(localCompanyInfo); toast.success("Saved!"); } catch (e) { toast.error("Error"); } };
 
   // === HOME PAGE ===
   const handleHomeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalHomeContent({ ...localHomeContent, [e.target.name]: e.target.value }); };
-  const handleHomeImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => setLocalHomeContent({ ...localHomeContent, [field]: reader.result as string }); reader.readAsDataURL(e.target.files[0]); } };
+  const handleHomeImageUpload = (field: string) => { 
+    openImageEditor((croppedImage) => {
+      setLocalHomeContent({ ...localHomeContent, [field]: croppedImage });
+      setImageEditorOpen(false);
+      toast.success('Image edited successfully!');
+    });
+  };
   const handleStatChange = (index: number, field: string, value: string) => { const newStats = [...(localHomeContent.stats || [])]; newStats[index] = { ...newStats[index], [field]: value }; setLocalHomeContent({ ...localHomeContent, stats: newStats }); };
   const handleIndustryChange = (index: number, field: string, value: string) => { const newInds = [...(localHomeContent.industries || [])]; newInds[index] = { ...newInds[index], [field]: value }; setLocalHomeContent({ ...localHomeContent, industries: newInds }); };
-  const handleIndustryImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => { const newInds = [...(localHomeContent.industries || [])]; newInds[index] = { ...newInds[index], image: reader.result as string }; setLocalHomeContent({ ...localHomeContent, industries: newInds }); }; reader.readAsDataURL(e.target.files[0]); } };
+  const handleIndustryImageUpload = (index: number) => { 
+    openImageEditor((croppedImage) => {
+      const newInds = [...(localHomeContent.industries || [])]; 
+      newInds[index] = { ...newInds[index], image: croppedImage }; 
+      setLocalHomeContent({ ...localHomeContent, industries: newInds }); 
+    });
+  };
   const handleWhyChooseUsChange = (index: number, field: string, value: string) => { const newItems = [...(localHomeContent.whyChooseUsItems || [])]; newItems[index] = { ...newItems[index], [field]: value }; setLocalHomeContent({ ...localHomeContent, whyChooseUsItems: newItems }); };
   const saveHomeContent = async () => { const btn = document.getElementById('save-home-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateHomeContent(localHomeContent); toast.success("Home Page updated!"); } catch(e) { toast.error("Error"); } finally { if (btn) btn.innerText = ogText; } };
 
   // === ABOUT PAGE ===
   const handleAboutChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setLocalAboutContent({ ...localAboutContent, [e.target.name]: e.target.value }); };
-  const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => setLocalAboutContent({ ...localAboutContent, coverImage: reader.result as string }); reader.readAsDataURL(e.target.files[0]); } };
+  const handleAboutImageUpload = () => { 
+    openImageEditor((croppedImage) => {
+      setLocalAboutContent({ ...localAboutContent, coverImage: croppedImage });
+    });
+  };
   const saveAboutContent = async () => { const btn = document.getElementById('save-about-btn'); const ogText = btn ? btn.innerText : ''; if (btn) btn.innerText = "Saving..."; try { await updateAboutContent(localAboutContent); toast.success("About Page updated!"); } catch(e) { toast.error("Error"); } finally { if (btn) btn.innerText = ogText; } };
 
   // === SERVICES ===
@@ -62,14 +104,49 @@ const AdminDashboard: React.FC = () => {
         }
     } 
   };
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { if (editingService && e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onloadend = () => setEditingService({ ...editingService, image: reader.result as string }); reader.readAsDataURL(e.target.files[0]); } };
+  const addFeature = () => {
+    if (editingService) {
+      setEditingService({
+        ...editingService,
+        features: [...(editingService.features || []), ''],
+        featuresAr: [...(editingService.featuresAr || []), '']
+      });
+    }
+  };
+  const removeFeature = (index: number) => {
+    if (editingService) {
+      const updatedFeatures = (editingService.features || []).filter((_: string, i: number) => i !== index);
+      const updatedFeaturesAr = (editingService.featuresAr || []).filter((_: string, i: number) => i !== index);
+      setEditingService({
+        ...editingService,
+        features: updatedFeatures,
+        featuresAr: updatedFeaturesAr
+      });
+    }
+  };
+  const handleImageUpload = () => { 
+    openImageEditor((croppedImage) => {
+      if (editingService) {
+        setEditingService({ ...editingService, image: croppedImage });
+      }
+    });
+  };
   const saveService = async () => { if (!editingService) return; try { const isNew = editingService.id && String(editingService.id).startsWith('new_'); let updatedServices = isNew ? [...services, editingService] : services.map(s => s.id === editingService.id ? editingService : s); const uniqueServices = Array.from(new Map(updatedServices.map(s => [s.id, s])).values()); await updateServices(uniqueServices); setEditingService(null); toast.success('Saved!'); } catch (error) { toast.error('Error'); } };
-  const createNewService = () => setEditingService({ id: `new_${Date.now()}`, title: '', titleAr: '', shortDescription: '', shortDescriptionAr: '', fullDescription: '', fullDescriptionAr: '', iconName: '', image: '', features: ['', '', ''], featuresAr: ['', '', ''] });
+  const createNewService = () => setEditingService({ id: `new_${Date.now()}`, title: '', titleAr: '', shortDescription: '', shortDescriptionAr: '', fullDescription: '', fullDescriptionAr: '', iconName: '', image: '', features: ['', ''], featuresAr: ['', ''] });
   const deleteService = (id: string) => { if (confirm('Delete?')) updateServices(services.filter(s => s.id !== id)); };
 
   // === CERTIFICATES ===
   const handleCertChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingCert) setEditingCert({ ...editingCert, [e.target.name]: e.target.value }); };
+  const handleLicenseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingLicense) setEditingLicense({ ...editingLicense, [e.target.name]: e.target.value }); };
   
+  const handleLicensePhotoUpload = () => {
+    if (!editingLicense) return;
+    openImageEditor((croppedImage) => {
+      setEditingLicense({ ...editingLicense, licenseOwnerPhotoUrl: croppedImage });
+      setImageEditorOpen(false);
+    });
+  };
+
   const saveCertificate = async () => { 
     if (!editingCert) return; 
     
@@ -82,12 +159,17 @@ const AdminDashboard: React.FC = () => {
     setIsSavingCert(true);
     
     try { 
-      const today = new Date(); 
-      const expDate = new Date(editingCert.expiryDate || today); 
-      const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24)); 
-      let status = 'valid'; 
-      if (diffDays <= 0) status = 'expired'; 
-      else if (diffDays <= 30) status = 'expiring'; 
+      let status = editingCert.status || 'valid';
+      
+      // إذا لم يحدد Admin الحالة يدويياً، احسبها تلقائياً
+      if (!editingCert.status) {
+        const today = new Date(); 
+        const expDate = new Date(editingCert.expiryDate || today); 
+        const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24)); 
+        status = 'valid'; 
+        if (diffDays <= 0) status = 'expired'; 
+        else if (diffDays <= 30) status = 'expiring';
+      }
       
       const finalCert = { 
         ...editingCert, 
@@ -108,24 +190,68 @@ const AdminDashboard: React.FC = () => {
       setIsSavingCert(false); 
     } 
   };
-  
+
+  const saveLicense = async () => {
+    if (!editingLicense) return;
+    setIsSavingCert(true);
+    try {
+      const finalLicense = {
+        ...editingLicense,
+        id: editingLicense.id?.trim() || `license-${Date.now()}`,
+        companyName: editingLicense.companyName || 'Unassigned / Others'
+      };
+      await api.licenses.addOrUpdate(finalLicense);
+      await refreshData();
+      setEditingLicense(null);
+      toast.success('License Saved Successfully!');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Error: ${error.message || 'Failed to save license'}`);
+    } finally {
+      setIsSavingCert(false);
+    }
+  };
+
+  const createNewLicense = () => { 
+    setEditingLicense({ 
+      id: '',
+      companyName: '', 
+      equipmentName: '', 
+      model: '',
+      serialNumber: '', 
+      inspectionDate: '', 
+      expiryDate: '', 
+      pdfUrl: '', 
+      status: 'valid',
+      licenseOwnerName: '',
+      licenseOwnerPhotoUrl: ''
+    }); 
+  };
+
   const createNewCertificate = () => { 
     setEditingCert({ 
       id: '', 
       companyName: '', 
       equipmentName: '', 
+      model: '',
       serialNumber: '', 
       inspectionDate: '', 
       expiryDate: '', 
-      pdfUrl: '', // رابط نصي لجوجل درايف
-      equipmentStatus: 'Accepted'
+      pdfUrl: '', 
+      equipmentStatus: 'Accepted',
+      status: 'valid',
+      licenseOwnerName: '',
+      licenseOwnerPhotoUrl: ''
     }); 
   };
   
   const deleteCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.certificates.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
+  const deleteLicense = async (id: string) => { if (confirm('Delete?')) { try { await api.licenses.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
 
   const groupedCerts = certificates.reduce((acc, cert) => { const company = cert.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof certificates>);
   const sortedCompanies = Object.keys(groupedCerts).sort((a, b) => a.localeCompare(b));
+  const groupedLicenses = licenses.reduce((acc, license) => { const company = license.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof licenses>);
+  const sortedLicenseCompanies = Object.keys(groupedLicenses).sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
@@ -137,6 +263,7 @@ const AdminDashboard: React.FC = () => {
           <button type="button" onClick={() => setActiveTab('about')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'about' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Info size={18} /> About Us Page</button>
           <button type="button" onClick={() => setActiveTab('services')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'services' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><FileText size={18} /> Services</button>
           <button type="button" onClick={() => setActiveTab('certificates')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'certificates' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Users size={18} /> Certificates</button>
+          <button type="button" onClick={() => setActiveTab('licenses')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'licenses' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Shield size={18} /> Licenses</button>
         </nav>
         <div className="p-4 border-t border-gray-800 bg-slate-900 sticky bottom-0"><button type="button" onClick={() => { logout(); navigate('/login'); }} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg text-sm font-bold"><LogOut size={18} /> Logout</button></div>
       </aside>
@@ -178,7 +305,7 @@ const AdminDashboard: React.FC = () => {
                   <div><label className="block text-sm font-bold mb-1">Subtitle (AR)</label><input name="heroSubtitleAr" value={localHomeContent.heroSubtitleAr || ''} onChange={handleHomeChange} className="w-full p-3 bg-gray-50 border rounded-lg outline-none text-right" dir="rtl" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
-                  <div><label className="block text-sm font-bold mb-2">Background Image</label><input type="file" accept="image/*" onChange={(e) => handleHomeImageUpload(e, 'heroImage')} className="w-full p-2 border border-dashed rounded-lg" /></div>
+                  <div><label className="block text-sm font-bold mb-2">Background Image</label><button type="button" onClick={() => handleHomeImageUpload('heroImage')} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-omega-blue hover:bg-blue-50 transition">Click to select & edit image</button></div>
                   <div>{localHomeContent.heroImage && <img src={localHomeContent.heroImage} alt="Preview" className="w-full h-24 rounded-lg object-cover" />}</div>
                 </div>
               </div>
@@ -213,7 +340,7 @@ const AdminDashboard: React.FC = () => {
                   {localHomeContent.industries?.map((ind, idx) => (
                     <div key={idx} className="bg-slate-50 p-4 rounded-lg border flex gap-4">
                       <div className="w-32 shrink-0">{ind.image ? <img src={ind.image} className="w-full h-24 object-cover rounded mb-2" /> : <div className="w-full h-24 bg-gray-200 rounded mb-2"></div>}
-                        <input type="file" accept="image/*" onChange={(e) => handleIndustryImageUpload(idx, e)} className="w-full text-[10px]" />
+                        <button type="button" onClick={() => handleIndustryImageUpload(idx)} className="w-full p-2 border border-dashed border-gray-300 rounded text-xs hover:border-omega-blue hover:bg-blue-50 transition">Edit image</button>
                       </div>
                       <div className="w-full grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -237,7 +364,7 @@ const AdminDashboard: React.FC = () => {
                     <div><input name="whyChooseUsTitleAr" value={localHomeContent.whyChooseUsTitleAr || ''} onChange={handleHomeChange} className="w-full p-3 bg-gray-50 border rounded-lg text-right" dir="rtl" placeholder="Section Title (AR)" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div><label className="block text-sm font-bold mb-2">Upload Image</label><input type="file" accept="image/*" onChange={(e) => handleHomeImageUpload(e, 'whyChooseUsImage')} className="w-full p-2 border border-dashed rounded-lg" /></div>
+                  <div><label className="block text-sm font-bold mb-2">Upload Image</label><button type="button" onClick={() => handleHomeImageUpload('whyChooseUsImage')} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-omega-blue hover:bg-blue-50 transition">Click to select & edit image</button></div>
                   <div>{localHomeContent.whyChooseUsImage && <img src={localHomeContent.whyChooseUsImage} alt="Preview" className="w-full h-24 rounded-lg object-cover" />}</div>
                 </div>
                 <div className="space-y-4">
@@ -274,7 +401,7 @@ const AdminDashboard: React.FC = () => {
                 <div><label className="block text-sm font-bold mb-2">Subtitle (AR)</label><input name="subtitleAr" value={localAboutContent.subtitleAr || ''} onChange={handleAboutChange} className="w-full p-3 bg-gray-50 border rounded-lg text-right" dir="rtl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                  <div><label className="block text-sm font-bold mb-2">Cover Image</label><input type="file" accept="image/*" onChange={handleAboutImageUpload} className="w-full p-2 border border-dashed rounded-lg bg-gray-50" /></div>
+                  <div><label className="block text-sm font-bold mb-2">Cover Image</label><button type="button" onClick={handleAboutImageUpload} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-omega-blue hover:bg-blue-50 transition">Click to select & edit image</button></div>
                   <div><label className="block text-sm font-bold mb-2">Preview</label>{localAboutContent.coverImage && <img src={localAboutContent.coverImage} className="w-full h-24 rounded-lg object-cover" />}</div>
               </div>
               <div className="grid grid-cols-2 gap-6">
@@ -330,20 +457,201 @@ const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold mb-2">Cover Image</label><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-2 border border-dashed rounded-lg" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Cover Image</label><button type="button" onClick={handleImageUpload} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-omega-blue hover:bg-blue-50 transition">Click to select & edit image</button></div>
                     <div>{editingService.image && <img src={editingService.image} alt="Preview" className="w-full h-32 rounded-lg object-cover" />}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold mb-3">Features (EN)</label>
-                      <div className="space-y-3">{editingService.features?.map((f: string, i: number) => (<input key={i} value={f} onChange={(e) => handleFeatureChange(i, e.target.value, false)} className="w-full p-3 bg-gray-50 border rounded-lg" placeholder={`Feature EN ${i + 1}`} />))}</div>
+                      <div className="space-y-3">
+                        {editingService.features?.map((f: string, i: number) => (
+                          <div key={i} className="flex gap-2">
+                            <input 
+                              value={f} 
+                              onChange={(e) => handleFeatureChange(i, e.target.value, false)} 
+                              className="flex-1 p-3 bg-gray-50 border rounded-lg" 
+                              placeholder={`Feature EN ${i + 1}`} 
+                            />
+                            {editingService.features.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => removeFeature(i)} 
+                                className="p-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={addFeature} 
+                        className="mt-3 w-full py-2 bg-blue-50 text-blue-600 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-100"
+                      >
+                        <Plus size={16} /> Add Feature
+                      </button>
                     </div>
                     <div>
                       <label className="block text-sm font-bold mb-3 text-right">Features (AR)</label>
-                      <div className="space-y-3">{(editingService.featuresAr || ['', '', '']).map((f: string, i: number) => (<input key={i} value={f} onChange={(e) => handleFeatureChange(i, e.target.value, true)} className="w-full p-3 bg-gray-50 border rounded-lg text-right" dir="rtl" placeholder={`Feature AR ${i + 1}`} />))}</div>
+                      <div className="space-y-3">
+                        {(editingService.featuresAr || []).map((f: string, i: number) => (
+                          <div key={i} className="flex gap-2">
+                            <input 
+                              value={f} 
+                              onChange={(e) => handleFeatureChange(i, e.target.value, true)} 
+                              className="flex-1 p-3 bg-gray-50 border rounded-lg text-right" 
+                              dir="rtl" 
+                              placeholder={`Feature AR ${i + 1}`} 
+                            />
+                            {(editingService.featuresAr || []).length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => removeFeature(i)} 
+                                className="p-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={addFeature} 
+                        className="mt-3 w-full py-2 bg-blue-50 text-blue-600 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-100"
+                      >
+                        <Plus size={16} /> Add Feature
+                      </button>
                     </div>
                   </div>
                   <div className="flex gap-4 pt-8 border-t"><button type="button" onClick={saveService} className="flex-1 py-3 bg-omega-blue text-white rounded-lg font-bold"><Save size={18} className="inline mr-2"/> Save</button><button type="button" onClick={() => setEditingService(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === LICENSES TAB === */}
+        {activeTab === 'licenses' && (
+          <div className="space-y-6">
+            {!editingLicense ? (
+              <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                <div className="p-6 border-b flex justify-between items-center bg-white">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <input type="text" placeholder="Search licenses..." className="pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm w-80" />
+                  </div>
+                  <button type="button" onClick={createNewLicense} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New License</button>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Name</th><th className="p-5">Serial</th><th className="p-5">Expiry</th><th className="p-5">Status</th><th className="p-5">QR</th><th className="p-5">License Owner</th><th className="p-5">Photo</th><th className="p-5 text-right">Action</th></tr></thead>
+                  <tbody className="text-sm text-gray-700">
+                    {sortedLicenseCompanies.map((company) => (
+                      <React.Fragment key={company}>
+                        <tr className="bg-slate-100/50 border-y"><td colSpan={8} className="px-5 py-4 font-bold text-omega-dark"><div className="flex items-center gap-2"><Building2 size={20} className="text-omega-yellow" /><span>{company}</span></div></td></tr>
+                        {groupedLicenses[company].map((license) => (
+                          <tr key={license.id} className="hover:bg-blue-50/30 border-b">
+                            <td className="p-5"><div className="font-bold">{license.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{license.companyName}</div></td>
+                            <td className="p-5 font-mono text-xs">{license.serialNumber}</td>
+                            <td className="p-5">{license.expiryDate}</td>
+                            <td className="p-5"><span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${
+                              license.status === 'expired' ? 'bg-red-100 text-red-700' :
+                              license.status === 'expiring' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>{license.status}</span></td>
+                            <td className="p-5">
+                              <div className="inline-flex items-center justify-center rounded-xl bg-white p-1 shadow-sm">
+                                <QRCodeCanvas value={`${window.location.origin}/#/license/${license.id}`} size={64} level="H" />
+                              </div>
+                            </td>
+                            <td className="p-5">{license.licenseOwnerName || '-'}</td>
+                            <td className="p-5">
+                              {license.licenseOwnerPhotoUrl ? (
+                                <img src={license.licenseOwnerPhotoUrl} alt="Owner" className="w-14 h-14 rounded-full object-cover" />
+                              ) : (
+                                <span className="text-xs text-gray-400 uppercase">No photo</span>
+                              )}
+                            </td>
+                            <td className="p-5 text-right flex justify-end gap-3">
+                              <button type="button" onClick={() => setEditingLicense(license)} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
+                              <button type="button" onClick={() => deleteLicense(license.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto">
+                <div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingLicense.id ? 'Edit License' : 'New License'}</h3><button type="button" onClick={() => setEditingLicense(null)} className="p-2 bg-gray-50 rounded-full"><X size={20} /></button></div>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Company Name</label>
+                      <input name="companyName" value={editingLicense.companyName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Equipment</label>
+                      <input name="equipmentName" value={editingLicense.equipmentName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Model</label>
+                      <input name="model" value={editingLicense.model || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Serial</label>
+                      <input name="serialNumber" value={editingLicense.serialNumber || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Inspection Date</label>
+                      <input type="date" name="inspectionDate" value={editingLicense.inspectionDate || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">License Status</label>
+                      <select name="status" value={editingLicense.status || 'valid'} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
+                        <option value="valid">Valid (سارية)</option>
+                        <option value="expired">Expired (منتهية)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2">PDF Link</label>
+                    <input type="url" name="pdfUrl" value={editingLicense.pdfUrl || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:border-omega-yellow" placeholder="https://drive.google.com/..." />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2">License Owner Name</label>
+                    <input type="text" name="licenseOwnerName" value={editingLicense.licenseOwnerName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" placeholder="Owner name" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2">License Owner Photo</label>
+                    <div className="flex gap-3 items-center">
+                      <button type="button" onClick={handleLicensePhotoUpload} disabled={isSavingCert} className="px-4 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
+                        Upload Photo
+                      </button>
+                      {editingLicense.licenseOwnerPhotoUrl && (
+                        <img src={editingLicense.licenseOwnerPhotoUrl} alt="Owner" className="w-16 h-16 rounded-full object-cover border" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-8 border-t">
+                    <button type="button" onClick={saveLicense} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold flex justify-center items-center disabled:opacity-70 transition-all">
+                      {isSavingCert ? <><Loader2 className="animate-spin mr-2" size={18} /> Saving...</> : <><Save size={18} className="inline mr-2"/> Save License</>}
+                    </button>
+                    <button type="button" onClick={() => setEditingLicense(null)} disabled={isSavingCert} className="px-8 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold disabled:opacity-50 transition-colors">Cancel</button>
+                  </div>
                 </div>
               </div>
             )}
@@ -357,19 +665,27 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                 <div className="p-6 border-b flex justify-between items-center bg-white"><div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search..." className="pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm w-80" /></div><button type="button" onClick={createNewCertificate} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
                 <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Equipment</th><th className="p-5">Serial</th><th className="p-5">Expiry</th><th className="p-5">Status</th><th className="p-5 text-center">QR</th><th className="p-5 text-right">Action</th></tr></thead>
+                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Name</th><th className="p-5">Model</th><th className="p-5">Serial</th><th className="p-5">Expiry</th><th className="p-5">Status</th><th className="p-5 text-center">QR</th><th className="p-5 text-right">Action</th></tr></thead>
                   <tbody className="text-sm text-gray-700">
                     {sortedCompanies.map((company) => (
                       <React.Fragment key={company}>
-                        <tr className="bg-slate-100/50 border-y"><td colSpan={6} className="px-5 py-4 font-bold text-omega-dark"><div className="flex items-center gap-2"><Building2 size={20} className="text-omega-yellow" /><span>{company}</span></div></td></tr>
+                        <tr className="bg-slate-100/50 border-y"><td colSpan={7} className="px-5 py-4 font-bold text-omega-dark"><div className="flex items-center gap-2"><Building2 size={20} className="text-omega-yellow" /><span>{company}</span></div></td></tr>
                         {groupedCerts[company].map((cert) => (
                           <tr key={cert.id} className="hover:bg-blue-50/30 border-b">
-                              <td className="p-5 font-bold">{cert.equipmentName}</td>
+                              <td className="p-5"><div className="font-bold">{cert.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{cert.companyName}</div></td>
+                              <td className="p-5">{cert.model || '-'}</td>
                               <td className="p-5 font-mono text-xs">{cert.serialNumber}</td>
                               <td className="p-5">{cert.expiryDate}</td>
-                              <td className="p-5"><span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase bg-gray-100">{cert.status}</span></td>
+                              <td className="p-5"><span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${
+                                cert.status === 'expired' ? 'bg-red-100 text-red-700' :
+                                cert.status === 'expiring' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>{cert.status}</span></td>
                               <td className="p-5 flex justify-center text-center"><QRCodeCanvas value={`${window.location.origin}/#/certificate/${cert.id}`} size={512} style={{ width: '48px', height: '48px' }} level={"H"} /></td>
-                              <td className="p-5 text-right"><button type="button" onClick={() => deleteCertificate(cert.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
+                              <td className="p-5 text-right flex items-center justify-end gap-3">
+                                <button type="button" onClick={() => setEditingCert(cert)} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
+                                <button type="button" onClick={() => deleteCertificate(cert.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
+                              </td>
                           </tr>
                         ))}
                       </React.Fragment>
@@ -395,11 +711,19 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold mb-2">Equipment</label><input name="equipmentName" value={editingCert.equipmentName || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
-                    <div><label className="block text-sm font-bold mb-2">Serial</label><input name="serialNumber" value={editingCert.serialNumber || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Model</label><input name="model" value={editingCert.model || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold mb-2">Inspection Date</label><input type="date" name="inspectionDate" value={editingCert.inspectionDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+                    <div><label className="block text-sm font-bold mb-2">Serial</label><input name="serialNumber" value={editingCert.serialNumber || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" /></div>
+                    <div></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Inspection Date</label>
+                      <input type="date" name="inspectionDate" value={editingCert.inspectionDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
                     <div><label className="block text-sm font-bold mb-2">Expiry Date</label><input type="date" name="expiryDate" value={editingCert.expiryDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
                   </div>
                   
@@ -412,9 +736,18 @@ const AdminDashboard: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold mb-2">PDF Link (Google Drive)</label>
-                      <input type="url" name="pdfUrl" value={editingCert.pdfUrl || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:border-omega-yellow" placeholder="https://drive.google.com/..." />
+                      <label className="block text-sm font-bold mb-2">Certificate Status (حالة الشهادة)</label>
+                      <select name="status" value={editingCert.status || 'valid'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
+                        <option value="valid">Valid (سارية)</option>
+                        <option value="expiring">Expiring Soon (تنتهي قريباً)</option>
+                        <option value="expired">Expired (منتهية الصلاحية)</option>
+                      </select>
                     </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-bold mb-2">PDF Link (Google Drive)</label>
+                    <input type="url" name="pdfUrl" value={editingCert.pdfUrl || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:border-omega-yellow" placeholder="https://drive.google.com/..." />
                   </div>
 
                   <div className="flex gap-4 pt-8 border-t">
@@ -429,6 +762,18 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </main>
+      
+      {/* Image Editor Modal */}
+      {imageEditorOpen && imageEditorCallback && (
+        <ImageEditor
+          imageSrc={imageEditorSource}
+          onSave={(croppedImage) => {
+            imageEditorCallback(croppedImage);
+            setImageEditorOpen(false);
+          }}
+          onClose={() => setImageEditorOpen(false)}
+        />
+      )}
     </div>
   );
 };

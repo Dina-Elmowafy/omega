@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ServiceItem, InspectionCertificate, ProjectUpdate, BlogPost, JobPosition, CompanyInfo, HomePageContent, AboutPageContent } from '../types';
+import { ServiceItem, InspectionCertificate, LicenseRecord, ProjectUpdate, BlogPost, JobPosition, CompanyInfo, HomePageContent, AboutPageContent } from '../types';
 import { api } from '../services/api';
 
 interface DataContextType {
@@ -16,7 +16,9 @@ interface DataContextType {
   updateServices: (services: ServiceItem[]) => Promise<void>;
   
   certificates: InspectionCertificate[];
+  licenses: LicenseRecord[];
   updateCertificates: () => Promise<void>;
+  updateLicenses: () => Promise<void>;
   
   projects: ProjectUpdate[];
   blogPosts: BlogPost[];
@@ -35,18 +37,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [aboutContent, setAboutContent] = useState<AboutPageContent>({} as AboutPageContent);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [certificates, setCertificates] = useState<InspectionCertificate[]>([]);
+  const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [projects, setProjects] = useState<ProjectUpdate[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [jobs, setJobs] = useState<JobPosition[]>([]);
 
   const refreshData = async () => {
     try {
-      const [infoData, homeData, aboutData, servicesData, certsData, projsData, blogsData, jobsData] = await Promise.all([
+      const [infoData, homeData, aboutData, servicesData, certsData, licensesData, projsData, blogsData, jobsData] = await Promise.all([
         api.company.get(),
         api.homePage.get(),
         api.aboutPage.get(),
         api.services.getAll(),
         api.certificates.getAll(),
+        api.licenses.getAll(),
         api.projects.getAll(),
         api.blog.getAll(),
         api.jobs.getAll()
@@ -57,6 +61,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAboutContent(aboutData);
       setServices(servicesData);
       setCertificates(certsData);
+      setLicenses(licensesData);
       setProjects(projsData);
       setBlogPosts(blogsData);
       setJobs(jobsData);
@@ -71,6 +76,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateAboutContent = async (content: AboutPageContent) => { await api.aboutPage.update(content); await refreshData(); };
   const updateServices = async (newServices: ServiceItem[]) => { await api.services.update(newServices); setServices(newServices); };
   const updateCertificates = async () => { await refreshData(); };
+  const updateLicenses = async () => { await refreshData(); };
 
   return (
     <DataContext.Provider value={{
@@ -78,7 +84,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       homeContent, updateHomeContent,
       aboutContent, updateAboutContent,
       services, updateServices,
-      certificates, updateCertificates,
+      certificates, licenses, updateCertificates, updateLicenses,
       projects, blogPosts, jobs,
       loading, refreshData
     }}>

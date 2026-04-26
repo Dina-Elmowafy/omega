@@ -13,6 +13,7 @@ const translations: Record<Language, Record<string, string>> = {
   en: {
     home: "HOME",
     services: "SERVICES",
+    license: "LICENSE",
     about: "WHO WE ARE",
     news: "NEWS",
     contact: "CONTACT",
@@ -34,6 +35,7 @@ const translations: Record<Language, Record<string, string>> = {
   ar: {
     home: "الرئيسية",
     services: "الخدمات",
+    license: "الرخص",
     about: "من نحن",
     news: "الأخبار",
     contact: "تواصل معنا",
