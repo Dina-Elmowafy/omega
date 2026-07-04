@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { CheckCircle, AlertTriangle, XCircle, FileText, Calendar, Shield } from 'lucide-react';
@@ -73,12 +73,16 @@ const CertificateView: React.FC = () => {
               <p className="text-lg font-mono font-bold text-gray-800">{cert.id || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
-              <p className="text-lg font-mono font-bold text-gray-800">{cert.serialNumber || 'N/A'}</p>
-            </div>
-            <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Equipment Name</p>
               <p className="text-xl font-bold text-omega-blue">{cert.equipmentName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Model</p>
+              <p className="text-xl font-bold text-omega-blue">{cert.model || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
+              <p className="text-lg font-mono font-bold text-gray-800">{cert.serialNumber || 'N/A'}</p>
             </div>
           </div>
 
@@ -120,3 +124,4 @@ const CertificateView: React.FC = () => {
 };
 
 export default CertificateView;
+
