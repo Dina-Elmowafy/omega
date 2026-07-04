@@ -162,7 +162,7 @@ const AdminDashboard: React.FC = () => {
   const saveCertificate = async () => { 
     if (!editingCert) return; 
     
-    // Ø§Ù„ØªØ£ÙƒØ¯ Ù…Ù† Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ù€ ID
+    // Ensure the certificate ID is provided.
     if (!editingCert.id || editingCert.id.trim() === '') {
       toast.error('Please enter a Certificate ID');
       return;
@@ -173,7 +173,7 @@ const AdminDashboard: React.FC = () => {
     try { 
       let status = editingCert.status || 'valid';
       
-      // Ø¥Ø°Ø§ Ù„Ù… ÙŠØ­Ø¯Ø¯ Admin Ø§Ù„Ø­Ø§Ù„Ø© ÙŠØ¯ÙˆÙŠÙŠØ§Ù‹ØŒ Ø§Ø­Ø³Ø¨Ù‡Ø§ ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹
+      // If the admin did not set a status manually, calculate it from the expiry date.
       if (!editingCert.status) {
         const today = new Date(); 
         const expDate = new Date(editingCert.expiryDate || today); 
@@ -924,18 +924,18 @@ const AdminDashboard: React.FC = () => {
                   
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold mb-2">Equipment Status (Ø­Ø§Ù„Ø© Ø§Ù„Ù…Ø¹Ø¯Ø©)</label>
+                      <label className="block text-sm font-bold mb-2">Equipment Status (حالة المعدة)</label>
                       <select name="equipmentStatus" value={editingCert.equipmentStatus || 'Accepted'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
-                        <option value="Accepted">Accepted (Ù…Ù‚Ø¨ÙˆÙ„Ø©)</option>
-                        <option value="Rejected">Rejected (Ù…Ø±ÙÙˆØ¶Ø©)</option>
+                        <option value="Accepted">Accepted (مقبولة)</option>
+                        <option value="Rejected">Rejected (مرفوضة)</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold mb-2">Certificate Status (Ø­Ø§Ù„Ø© Ø§Ù„Ø´Ù‡Ø§Ø¯Ø©)</label>
+                      <label className="block text-sm font-bold mb-2">Certificate Status (حالة الشهادة)</label>
                       <select name="status" value={editingCert.status || 'valid'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
-                        <option value="valid">Valid (Ø³Ø§Ø±ÙŠØ©)</option>
-                        <option value="expiring">Expiring Soon (ØªÙ†ØªÙ‡ÙŠ Ù‚Ø±ÙŠØ¨Ø§Ù‹)</option>
-                        <option value="expired">Expired (Ù…Ù†ØªÙ‡ÙŠØ© Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ©)</option>
+                        <option value="valid">Valid (سارية)</option>
+                        <option value="expiring">Expiring Soon (تنتهي قريبًا)</option>
+                        <option value="expired">Expired (منتهية الصلاحية)</option>
                       </select>
                     </div>
                   </div>
