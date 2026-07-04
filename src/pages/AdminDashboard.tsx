@@ -285,6 +285,26 @@ const AdminDashboard: React.FC = () => {
   const deleteLicense = async (id: string) => { if (confirm('Delete?')) { try { await api.licenses.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
   const restoreCertificate = async (id: string) => { try { await api.certificates.restore(id); await refreshData(); toast.success("Certificate restored"); } catch (error) { toast.error("Error restoring certificate"); } };
   const restoreLicense = async (id: string) => { try { await api.licenses.restore(id); await refreshData(); toast.success("License restored"); } catch (error) { toast.error("Error restoring license"); } };
+  const permanentDeleteCertificate = async (id: string) => {
+    if (!confirm('Permanently delete this certificate? This cannot be undone.')) return;
+    try {
+      await api.certificates.permanentDelete(id);
+      await refreshData();
+      toast.success('Certificate permanently deleted');
+    } catch (error) {
+      toast.error('Error deleting certificate');
+    }
+  };
+  const permanentDeleteLicense = async (id: string) => {
+    if (!confirm('Permanently delete this license? This cannot be undone.')) return;
+    try {
+      await api.licenses.permanentDelete(id);
+      await refreshData();
+      toast.success('License permanently deleted');
+    } catch (error) {
+      toast.error('Error deleting license');
+    }
+  };
 
   const matchesSearch = (item: Record<string, unknown>, search: string) => {
     const query = search.toLowerCase().trim();
@@ -327,6 +347,48 @@ const AdminDashboard: React.FC = () => {
   const sortedLicenseCompanies = licenseCompanyNames.sort((a, b) => a.localeCompare(b));
   const selectedCertificateRecords = selectedCertificateCompany ? groupedCerts[selectedCertificateCompany] || [] : [];
   const selectedLicenseRecords = selectedLicenseCompany ? groupedLicenses[selectedLicenseCompany] || [] : [];
+
+  const renameCertificateFolder = async (company: string) => {
+    const newCompanyName = normalizeCompanyFolderName(window.prompt('New folder name', company));
+    if (!newCompanyName || newCompanyName === company) return;
+
+    const folderRecords = certificates.filter((cert) => normalizeCompanyFolderName(cert.companyName) === company);
+    try {
+      for (const cert of folderRecords) {
+        await api.certificates.addOrUpdate({ ...cert, companyName: newCompanyName });
+      }
+      setManualCertificateCompanies((current) => Array.from(new Set([
+        ...current.filter((name) => normalizeCompanyFolderName(name) !== company),
+        newCompanyName
+      ])));
+      if (selectedCertificateCompany === company) setSelectedCertificateCompany(newCompanyName);
+      await refreshData();
+      toast.success('Folder renamed');
+    } catch (error) {
+      toast.error('Error renaming folder');
+    }
+  };
+
+  const renameLicenseFolder = async (company: string) => {
+    const newCompanyName = normalizeCompanyFolderName(window.prompt('New folder name', company));
+    if (!newCompanyName || newCompanyName === company) return;
+
+    const folderRecords = licenses.filter((license) => normalizeCompanyFolderName(license.companyName) === company);
+    try {
+      for (const license of folderRecords) {
+        await api.licenses.addOrUpdate({ ...license, companyName: newCompanyName });
+      }
+      setManualLicenseCompanies((current) => Array.from(new Set([
+        ...current.filter((name) => normalizeCompanyFolderName(name) !== company),
+        newCompanyName
+      ])));
+      if (selectedLicenseCompany === company) setSelectedLicenseCompany(newCompanyName);
+      await refreshData();
+      toast.success('Folder renamed');
+    } catch (error) {
+      toast.error('Error renaming folder');
+    }
+  };
 
   const deleteCertificateFolder = async (company: string) => {
     const folderRecords = certificates.filter((cert) => normalizeCompanyFolderName(cert.companyName) === company);
@@ -404,7 +466,10 @@ const AdminDashboard: React.FC = () => {
                           <p className="text-xs text-gray-500">{cert.companyName || 'Unassigned / Others'}</p>
                           <p className="text-xs text-gray-400">Deleted: {cert.deletedAt || '-'}</p>
                         </div>
-                        <button type="button" onClick={() => restoreCertificate(cert.id)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Restore</button>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => restoreCertificate(cert.id)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Restore</button>
+                          <button type="button" onClick={() => permanentDeleteCertificate(cert.id)} className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-bold">Delete forever</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -424,7 +489,10 @@ const AdminDashboard: React.FC = () => {
                           <p className="text-xs text-gray-500">{license.companyName || 'Unassigned / Others'}</p>
                           <p className="text-xs text-gray-400">Deleted: {license.deletedAt || '-'}</p>
                         </div>
-                        <button type="button" onClick={() => restoreLicense(license.id)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Restore</button>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => restoreLicense(license.id)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Restore</button>
+                          <button type="button" onClick={() => permanentDeleteLicense(license.id)} className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-bold">Delete forever</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -724,6 +792,7 @@ const AdminDashboard: React.FC = () => {
                           </button>
                           <div className="flex items-center gap-2 shrink-0">
                             <button type="button" onClick={() => setSelectedLicenseCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button>
+                            <button type="button" onClick={() => renameLicenseFolder(company)} className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700" aria-label={`Rename ${company} license folder`} title="Rename folder"><Edit2 size={16} /></button>
                             <button type="button" onClick={() => deleteLicenseFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} license folder`} title="Delete folder"><Trash2 size={16} /></button>
                           </div>
                         </div>
@@ -880,6 +949,7 @@ const AdminDashboard: React.FC = () => {
                           </button>
                           <div className="flex items-center gap-2 shrink-0">
                             <button type="button" onClick={() => setSelectedCertificateCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button>
+                            <button type="button" onClick={() => renameCertificateFolder(company)} className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700" aria-label={`Rename ${company} certificate folder`} title="Rename folder"><Edit2 size={16} /></button>
                             <button type="button" onClick={() => deleteCertificateFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} certificate folder`} title="Delete folder"><Trash2 size={16} /></button>
                           </div>
                         </div>

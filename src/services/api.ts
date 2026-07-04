@@ -175,6 +175,9 @@ export const api = {
 
       await setDoc(doc(db, "certificates", id), data);
       await deleteDoc(deletedRef);
+    },
+    permanentDelete: async (id: string): Promise<void> => {
+      await deleteDoc(doc(db, "deletedCertificates", id));
     }
   },
 
@@ -229,6 +232,9 @@ export const api = {
 
       await setDoc(doc(db, "licenses", id), data);
       await deleteDoc(deletedRef);
+    },
+    permanentDelete: async (id: string): Promise<void> => {
+      await deleteDoc(doc(db, "deletedLicenses", id));
     }
   },
 
