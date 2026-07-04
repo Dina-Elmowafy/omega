@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OMEGA | Petroleum & Construction Services</title>
+    
+    <!-- Tailwind CSS CDN (For local dev simplicity) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Barlow + Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              omega: {
+                yellow: '#FF9900',
+                dark: '#0B1C33',
+                blue: '#1E3A8A',
+                gray: '#F8FAFC',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Barlow', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <script>
+      (function() {
+        try {
+          const theme = localStorage.getItem('theme');
+          if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
+    <style>
+      body {
+        overflow-x: hidden;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+    </style>
+
+  <link rel="icon" href="./image/why-chose-omega.png" />
+<!-- index.css is imported from src/index.tsx so Vite can bundle it -->
+  <script type="module" src="/src/index.tsx"></script>
+
+</head>
+  <body class="bg-gray-50 dark:bg-slate-900">
+    <div id="root"></div>
+    <!-- Pointing to src folder -->
+</body>
+</html>
