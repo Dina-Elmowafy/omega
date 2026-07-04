@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Settings, FileText, Shield, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Building2, Home, Info, X, Loader2 } from 'lucide-react';
+import { Settings, FileText, Shield, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Home, Info, X, Loader2, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import Logo from '../components/Logo';
 import ImageEditor from '../components/ImageEditor';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -29,6 +29,8 @@ const AdminDashboard: React.FC = () => {
   const [localCompanyInfo, setLocalCompanyInfo] = useState<CompanyInfo>(companyInfo);
   const [certificateSearch, setCertificateSearch] = useState('');
   const [licenseSearch, setLicenseSearch] = useState('');
+  const [openCertificateFolders, setOpenCertificateFolders] = useState<Record<string, boolean>>({});
+  const [openLicenseFolders, setOpenLicenseFolders] = useState<Record<string, boolean>>({});
 
   useEffect(() => { if (homeContent && Object.keys(homeContent).length > 0) setLocalHomeContent(homeContent); }, [homeContent]);
   useEffect(() => { if (aboutContent && Object.keys(aboutContent).length > 0) setLocalAboutContent(aboutContent); }, [aboutContent]);
@@ -279,6 +281,10 @@ const AdminDashboard: React.FC = () => {
   const sortedCompanies = Object.keys(groupedCerts).sort((a, b) => a.localeCompare(b));
   const groupedLicenses = visibleLicenses.reduce((acc, license) => { const company = license.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof visibleLicenses>);
   const sortedLicenseCompanies = Object.keys(groupedLicenses).sort((a, b) => a.localeCompare(b));
+  const isCertificateFolderOpen = (company: string) => Boolean(certificateSearch.trim()) || Boolean(openCertificateFolders[company]);
+  const isLicenseFolderOpen = (company: string) => Boolean(licenseSearch.trim()) || Boolean(openLicenseFolders[company]);
+  const toggleCertificateFolder = (company: string) => setOpenCertificateFolders((current) => ({ ...current, [company]: !current[company] }));
+  const toggleLicenseFolder = (company: string) => setOpenLicenseFolders((current) => ({ ...current, [company]: !current[company] }));
 
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
@@ -624,8 +630,19 @@ const AdminDashboard: React.FC = () => {
                   <tbody className="text-sm text-gray-700">
                     {sortedLicenseCompanies.map((company) => (
                       <React.Fragment key={company}>
-                        <tr className="bg-slate-100/50 border-y"><td colSpan={8} className="px-5 py-4 font-bold text-omega-dark"><div className="flex items-center gap-2"><Building2 size={20} className="text-omega-yellow" /><span>{company}</span></div></td></tr>
-                        {groupedLicenses[company].map((license) => (
+                        <tr className="bg-slate-100/70 border-y hover:bg-slate-200/70 transition-colors">
+                          <td colSpan={8} className="px-5 py-4 font-bold text-omega-dark">
+                            <button type="button" onClick={() => toggleLicenseFolder(company)} className="w-full flex items-center justify-between gap-3 text-left">
+                              <div className="flex items-center gap-3">
+                                {isLicenseFolderOpen(company) ? <ChevronDown size={18} className="text-gray-500" /> : <ChevronRight size={18} className="text-gray-500" />}
+                                <Folder size={22} className="text-omega-yellow" />
+                                <span>{company}</span>
+                              </div>
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">{groupedLicenses[company].length} Licenses</span>
+                            </button>
+                          </td>
+                        </tr>
+                        {isLicenseFolderOpen(company) && groupedLicenses[company].map((license) => (
                           <tr key={license.id} className="hover:bg-blue-50/30 border-b">
                             <td className="p-5"><div className="font-bold">{license.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{license.companyName}</div></td>
                             <td className="p-5 font-mono text-xs">{license.serialNumber}</td>
@@ -750,8 +767,19 @@ const AdminDashboard: React.FC = () => {
                   <tbody className="text-sm text-gray-700">
                     {sortedCompanies.map((company) => (
                       <React.Fragment key={company}>
-                        <tr className="bg-slate-100/50 border-y"><td colSpan={10} className="px-5 py-4 font-bold text-omega-dark"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Building2 size={20} className="text-omega-yellow" /><span>{company}</span></div><span className="text-xs text-gray-500 uppercase tracking-wide">{groupedCerts[company].length} Certificates</span></div></td></tr>
-                        {groupedCerts[company].map((cert) => (
+                        <tr className="bg-slate-100/70 border-y hover:bg-slate-200/70 transition-colors">
+                          <td colSpan={10} className="px-5 py-4 font-bold text-omega-dark">
+                            <button type="button" onClick={() => toggleCertificateFolder(company)} className="w-full flex items-center justify-between gap-3 text-left">
+                              <div className="flex items-center gap-3">
+                                {isCertificateFolderOpen(company) ? <ChevronDown size={18} className="text-gray-500" /> : <ChevronRight size={18} className="text-gray-500" />}
+                                <Folder size={22} className="text-omega-yellow" />
+                                <span>{company}</span>
+                              </div>
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">{groupedCerts[company].length} Certificates</span>
+                            </button>
+                          </td>
+                        </tr>
+                        {isCertificateFolderOpen(company) && groupedCerts[company].map((cert) => (
                           <tr key={cert.id} className="hover:bg-blue-50/30 border-b">
                               <td className="p-5"><div className="font-bold">{cert.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{cert.companyName}</div></td>
                               <td className="p-5">{cert.model || '-'}</td>
