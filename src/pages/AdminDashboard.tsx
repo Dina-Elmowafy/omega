@@ -156,7 +156,14 @@ const AdminDashboard: React.FC = () => {
       ...(e.target.name === 'status' ? { statusManuallySet: true } : {})
     });
   };
-  const handleLicenseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingLicense) setEditingLicense({ ...editingLicense, [e.target.name]: e.target.value }); };
+  const handleLicenseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingLicense) return;
+    setEditingLicense({
+      ...editingLicense,
+      [e.target.name]: e.target.value,
+      ...(e.target.name === 'status' ? { statusManuallySet: true } : {})
+    });
+  };
   
   const handleLicensePhotoUpload = () => {
     if (!editingLicense) return;
@@ -218,6 +225,7 @@ const AdminDashboard: React.FC = () => {
       const finalLicense = {
         ...editingLicense,
         id: editingLicense.id?.trim() || `license-${Date.now()}`,
+        statusManuallySet: Boolean(editingLicense.statusManuallySet),
         companyName: editingLicense.companyName || 'Unassigned / Others'
       };
       await api.licenses.addOrUpdate(finalLicense);

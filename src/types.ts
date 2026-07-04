@@ -60,6 +60,7 @@ export interface LicenseRecord {
   inspectionDate: string;
   expiryDate: string;
   status: 'valid' | 'expiring' | 'expired';
+  statusManuallySet?: boolean;
   pdfUrl: string;
   companyName?: string;
   licenseOwnerName?: string;

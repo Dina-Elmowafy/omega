@@ -190,7 +190,7 @@ export const api = {
           const license = snapshot.data() as LicenseRecord;
           const status = getComputedStatus(license.expiryDate);
 
-          if (status && license.status !== status) {
+          if (!license.statusManuallySet && status && license.status !== status) {
             license.status = status;
             updates.push(setDoc(doc(db, "licenses", snapshot.id), license));
           }
