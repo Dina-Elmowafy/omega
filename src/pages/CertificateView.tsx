@@ -65,6 +65,10 @@ const CertificateView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
             <div>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Company Name</p>
+              <p className="text-xl font-bold text-omega-blue">{cert.companyName || 'N/A'}</p>
+            </div>
+            <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Shield size={14}/> Certificate ID</p>
               <p className="text-lg font-mono font-bold text-gray-800">{cert.id || 'N/A'}</p>
             </div>
@@ -72,17 +76,13 @@ const CertificateView: React.FC = () => {
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
               <p className="text-lg font-mono font-bold text-gray-800">{cert.serialNumber || 'N/A'}</p>
             </div>
-            <div className="col-span-1 md:col-span-2">
+            <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Equipment Name</p>
               <p className="text-xl font-bold text-omega-blue">{cert.equipmentName || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-4 border border-gray-100 rounded-lg">
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Calendar size={14}/> Production Date</p>
-              <p className="font-bold text-gray-800">{cert.productionDate || 'N/A'}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-6">
             <div className="p-4 border border-gray-100 rounded-lg">
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><Calendar size={14}/> Inspected On</p>
               <p className="font-bold text-gray-800">{cert.inspectionDate || 'N/A'}</p>

@@ -67,10 +67,14 @@ const LicenseView: React.FC = () => {
         <div className="space-y-6" dir="ltr">
           <h2 className="text-2xl font-display font-bold text-omega-dark uppercase tracking-wide">License Details</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
             <div>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
-              <p className="text-lg font-mono font-bold text-gray-800">{license.serialNumber || 'N/A'}</p>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Company Name</p>
+              <p className="text-xl font-bold text-omega-blue">{license.companyName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Owner Name</p>
+              <p className="text-xl font-bold text-omega-blue">{ownerName || 'N/A'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Equipment Name</p>
@@ -79,6 +83,10 @@ const LicenseView: React.FC = () => {
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Model</p>
               <p className="text-xl font-bold text-omega-blue">{license.model || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2"><FileText size={14}/> Serial Number</p>
+              <p className="text-lg font-mono font-bold text-gray-800">{license.serialNumber || 'N/A'}</p>
             </div>
           </div>
 
@@ -100,15 +108,9 @@ const LicenseView: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
               <div>
-                <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Owner Name</label>
-                <input
-                  type="text"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="Enter license owner name"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-2 focus:ring-omega-blue outline-none"
-                />
-                <p className="mt-3 text-sm text-gray-500">If the license contains an owner photo, it will appear automatically after scanning the QR/barcode.</p>
+                <p className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Owner Name</p>
+                <p className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-lg font-bold text-omega-blue">{ownerName || 'N/A'}</p>
+                <p className="mt-3 text-sm text-gray-500">The saved owner name and company name appear automatically after scanning the QR/barcode.</p>
               </div>
               <div className="rounded-3xl border border-gray-200 bg-white p-4 flex flex-col items-center justify-center gap-4">
                 {ownerPhotoPreview ? (
@@ -147,7 +149,6 @@ const LicenseView: React.FC = () => {
                   className="w-44 h-44"
                 />
               </div>
-              <p className="mt-3 text-xs text-slate-300 break-all">{window.location.origin}/#/license/{license.id}</p>
             </div>
           </div>
         </div>

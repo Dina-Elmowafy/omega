@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Settings, FileText, Shield, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Home, Info, X, Loader2, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { Settings, FileText, Shield, Users, LogOut, Plus, Save, Trash2, Edit2, Search, Home, Info, X, Loader2, Folder } from 'lucide-react';
 import Logo from '../components/Logo';
 import ImageEditor from '../components/ImageEditor';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -29,12 +29,20 @@ const AdminDashboard: React.FC = () => {
   const [localCompanyInfo, setLocalCompanyInfo] = useState<CompanyInfo>(companyInfo);
   const [certificateSearch, setCertificateSearch] = useState('');
   const [licenseSearch, setLicenseSearch] = useState('');
-  const [openCertificateFolders, setOpenCertificateFolders] = useState<Record<string, boolean>>({});
-  const [openLicenseFolders, setOpenLicenseFolders] = useState<Record<string, boolean>>({});
+  const [selectedCertificateCompany, setSelectedCertificateCompany] = useState<string | null>(null);
+  const [selectedLicenseCompany, setSelectedLicenseCompany] = useState<string | null>(null);
+  const [manualCertificateCompanies, setManualCertificateCompanies] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('manual_certificate_companies') || '[]'); } catch { return []; }
+  });
+  const [manualLicenseCompanies, setManualLicenseCompanies] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('manual_license_companies') || '[]'); } catch { return []; }
+  });
 
   useEffect(() => { if (homeContent && Object.keys(homeContent).length > 0) setLocalHomeContent(homeContent); }, [homeContent]);
   useEffect(() => { if (aboutContent && Object.keys(aboutContent).length > 0) setLocalAboutContent(aboutContent); }, [aboutContent]);
   useEffect(() => { if (companyInfo && Object.keys(companyInfo).length > 0) setLocalCompanyInfo(companyInfo); }, [companyInfo]);
+  useEffect(() => { localStorage.setItem('manual_certificate_companies', JSON.stringify(manualCertificateCompanies)); }, [manualCertificateCompanies]);
+  useEffect(() => { localStorage.setItem('manual_license_companies', JSON.stringify(manualLicenseCompanies)); }, [manualLicenseCompanies]);
 
   if (!user || user.role !== 'admin') { navigate('/login'); return null; }
 
@@ -154,7 +162,7 @@ const AdminDashboard: React.FC = () => {
   const saveCertificate = async () => { 
     if (!editingCert) return; 
     
-    // التأكد من إدخال الـ ID
+    // Ø§Ù„ØªØ£ÙƒØ¯ Ù…Ù† Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ù€ ID
     if (!editingCert.id || editingCert.id.trim() === '') {
       toast.error('Please enter a Certificate ID');
       return;
@@ -165,7 +173,7 @@ const AdminDashboard: React.FC = () => {
     try { 
       let status = editingCert.status || 'valid';
       
-      // إذا لم يحدد Admin الحالة يدويياً، احسبها تلقائياً
+      // Ø¥Ø°Ø§ Ù„Ù… ÙŠØ­Ø¯Ø¯ Admin Ø§Ù„Ø­Ø§Ù„Ø© ÙŠØ¯ÙˆÙŠÙŠØ§Ù‹ØŒ Ø§Ø­Ø³Ø¨Ù‡Ø§ ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹
       if (!editingCert.status) {
         const today = new Date(); 
         const expDate = new Date(editingCert.expiryDate || today); 
@@ -216,14 +224,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const createNewLicense = () => { 
+  const createNewLicense = (companyName = '') => { 
     setEditingLicense({ 
       id: '',
-      companyName: '', 
+      companyName, 
       equipmentName: '', 
       model: '',
       serialNumber: '', 
-      productionDate: '',
       inspectionDate: '', 
       expiryDate: '', 
       pdfUrl: '', 
@@ -233,10 +240,10 @@ const AdminDashboard: React.FC = () => {
     }); 
   };
 
-  const createNewCertificate = () => { 
+  const createNewCertificate = (companyName = '') => { 
     setEditingCert({ 
       id: '', 
-      companyName: '', 
+      companyName, 
       equipmentName: '', 
       model: '',
       serialNumber: '', 
@@ -248,6 +255,30 @@ const AdminDashboard: React.FC = () => {
       licenseOwnerName: '',
       licenseOwnerPhotoUrl: ''
     }); 
+  };
+  const createCertificateInCompanyFolder = () => {
+    if (selectedCertificateCompany) {
+      createNewCertificate(selectedCertificateCompany);
+      return;
+    }
+
+    const companyName = normalizeCompanyFolderName(window.prompt('Company name for the new folder'));
+    if (!companyName) return;
+
+    setManualCertificateCompanies((current) => current.includes(companyName) ? current : [...current, companyName]);
+    setSelectedCertificateCompany(companyName);
+  };
+  const createLicenseInCompanyFolder = () => {
+    if (selectedLicenseCompany) {
+      createNewLicense(selectedLicenseCompany);
+      return;
+    }
+
+    const companyName = normalizeCompanyFolderName(window.prompt('Company name for the new folder'));
+    if (!companyName) return;
+
+    setManualLicenseCompanies((current) => current.includes(companyName) ? current : [...current, companyName]);
+    setSelectedLicenseCompany(companyName);
   };
   
   const deleteCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.certificates.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
@@ -266,7 +297,6 @@ const AdminDashboard: React.FC = () => {
       item.serialNumber,
       item.id,
       item.licenseOwnerName,
-      item.productionDate,
       item.inspectionDate,
       item.expiryDate,
       item.status,
@@ -277,14 +307,26 @@ const AdminDashboard: React.FC = () => {
   const visibleCertificates = certificates.filter(cert => matchesSearch(cert as unknown as Record<string, unknown>, certificateSearch));
   const visibleLicenses = licenses.filter(license => matchesSearch(license as unknown as Record<string, unknown>, licenseSearch));
 
-  const groupedCerts = visibleCertificates.reduce((acc, cert) => { const company = cert.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof visibleCertificates>);
-  const sortedCompanies = Object.keys(groupedCerts).sort((a, b) => a.localeCompare(b));
-  const groupedLicenses = visibleLicenses.reduce((acc, license) => { const company = license.companyName || 'Unassigned / Others'; if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof visibleLicenses>);
-  const sortedLicenseCompanies = Object.keys(groupedLicenses).sort((a, b) => a.localeCompare(b));
-  const isCertificateFolderOpen = (company: string) => Boolean(certificateSearch.trim()) || Boolean(openCertificateFolders[company]);
-  const isLicenseFolderOpen = (company: string) => Boolean(licenseSearch.trim()) || Boolean(openLicenseFolders[company]);
-  const toggleCertificateFolder = (company: string) => setOpenCertificateFolders((current) => ({ ...current, [company]: !current[company] }));
-  const toggleLicenseFolder = (company: string) => setOpenLicenseFolders((current) => ({ ...current, [company]: !current[company] }));
+  const normalizeCompanyFolderName = (name?: string | null) => {
+    const cleaned = String(name || '').trim().replace(/\s+/g, ' ');
+    if (!cleaned) return 'Unassigned / Others';
+    return cleaned.replace(/\s*\d+$/, '').trim() || cleaned;
+  };
+
+  const groupedCerts = visibleCertificates.reduce((acc, cert) => { const company = normalizeCompanyFolderName(cert.companyName); if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof visibleCertificates>);
+  const certificateCompanyNames = Array.from(new Set([
+    ...Object.keys(groupedCerts),
+    ...manualCertificateCompanies.map(normalizeCompanyFolderName).filter((company) => !certificateSearch.trim() || company.toLowerCase().includes(certificateSearch.toLowerCase().trim()))
+  ]));
+  const sortedCompanies = certificateCompanyNames.sort((a, b) => a.localeCompare(b));
+  const groupedLicenses = visibleLicenses.reduce((acc, license) => { const company = normalizeCompanyFolderName(license.companyName); if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof visibleLicenses>);
+  const licenseCompanyNames = Array.from(new Set([
+    ...Object.keys(groupedLicenses),
+    ...manualLicenseCompanies.map(normalizeCompanyFolderName).filter((company) => !licenseSearch.trim() || company.toLowerCase().includes(licenseSearch.toLowerCase().trim()))
+  ]));
+  const sortedLicenseCompanies = licenseCompanyNames.sort((a, b) => a.localeCompare(b));
+  const selectedCertificateRecords = selectedCertificateCompany ? groupedCerts[selectedCertificateCompany] || [] : [];
+  const selectedLicenseRecords = selectedLicenseCompany ? groupedLicenses[selectedLicenseCompany] || [] : [];
 
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
@@ -623,29 +665,53 @@ const AdminDashboard: React.FC = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input type="text" placeholder="Search licenses..." value={licenseSearch} onChange={(event) => setLicenseSearch(event.target.value)} className="pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm w-80" />
                   </div>
-                  <button type="button" onClick={createNewLicense} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New License</button>
+                  <button type="button" onClick={createLicenseInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New License</button>
                 </div>
-                <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Name</th><th className="p-5">Serial</th><th className="p-5">Expiry</th><th className="p-5">Status</th><th className="p-5">QR</th><th className="p-5">License Owner</th><th className="p-5">Photo</th><th className="p-5 text-right">Action</th></tr></thead>
-                  <tbody className="text-sm text-gray-700">
+                {!selectedLicenseCompany ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">
                     {sortedLicenseCompanies.map((company) => (
-                      <React.Fragment key={company}>
-                        <tr className="bg-slate-100/70 border-y hover:bg-slate-200/70 transition-colors">
-                          <td colSpan={8} className="px-5 py-4 font-bold text-omega-dark">
-                            <button type="button" onClick={() => toggleLicenseFolder(company)} className="w-full flex items-center justify-between gap-3 text-left">
-                              <div className="flex items-center gap-3">
-                                {isLicenseFolderOpen(company) ? <ChevronDown size={18} className="text-gray-500" /> : <ChevronRight size={18} className="text-gray-500" />}
-                                <Folder size={22} className="text-omega-yellow" />
-                                <span>{company}</span>
-                              </div>
-                              <span className="text-xs text-gray-500 uppercase tracking-wide">{groupedLicenses[company].length} Licenses</span>
-                            </button>
-                          </td>
-                        </tr>
-                        {isLicenseFolderOpen(company) && groupedLicenses[company].map((license) => (
+                      <button
+                        key={company}
+                        type="button"
+                        onClick={() => setSelectedLicenseCompany(company)}
+                        className="group bg-white border border-gray-200 rounded-xl p-5 text-left hover:border-omega-blue hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Folder size={34} className="text-omega-yellow shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-omega-dark truncate">{company}</p>
+                              <p className="text-xs text-gray-500 mt-1">{(groupedLicenses[company] || []).length} licenses inside</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between gap-4">
+                      <div>
+                        <button type="button" onClick={() => setSelectedLicenseCompany(null)} className="text-sm font-bold text-omega-blue hover:underline">Back to companies</button>
+                        <h3 className="text-xl font-bold text-omega-dark mt-1">{selectedLicenseCompany}</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">{selectedLicenseRecords.length} Licenses</span>
+                        <button type="button" onClick={createLicenseInCompanyFolder} className="bg-omega-blue text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Plus size={14}/> New License in this company</button>
+                      </div>
+                    </div>
+                    <table className="w-full text-left border-collapse">
+                      <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Company Name</th><th className="p-5">Owner Name</th><th className="p-5">Equipment</th><th className="p-5">Model</th><th className="p-5">Serial</th><th className="p-5">Inspection</th><th className="p-5">Expiry</th><th className="p-5">Status</th><th className="p-5">QR</th><th className="p-5 text-right">Edit</th></tr></thead>
+                      <tbody className="text-sm text-gray-700">
+                        {selectedLicenseRecords.map((license) => (
                           <tr key={license.id} className="hover:bg-blue-50/30 border-b">
-                            <td className="p-5"><div className="font-bold">{license.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{license.companyName}</div></td>
+                            <td className="p-5">{license.companyName || '-'}</td>
+                            <td className="p-5">{license.licenseOwnerName || '-'}</td>
+                            <td className="p-5 font-bold">{license.equipmentName}</td>
+                            <td className="p-5">{license.model || '-'}</td>
                             <td className="p-5 font-mono text-xs">{license.serialNumber}</td>
+                            <td className="p-5">{license.inspectionDate || '-'}</td>
                             <td className="p-5">{license.expiryDate}</td>
                             <td className="p-5"><span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${
                               license.status === 'expired' ? 'bg-red-100 text-red-700' :
@@ -657,24 +723,16 @@ const AdminDashboard: React.FC = () => {
                                 <QRCodeCanvas value={`${window.location.origin}/#/license/${license.id}`} size={64} level="H" />
                               </div>
                             </td>
-                            <td className="p-5">{license.licenseOwnerName || '-'}</td>
-                            <td className="p-5">
-                              {license.licenseOwnerPhotoUrl ? (
-                                <img src={license.licenseOwnerPhotoUrl} alt="Owner" className="w-14 h-14 rounded-full object-cover" />
-                              ) : (
-                                <span className="text-xs text-gray-400 uppercase">No photo</span>
-                              )}
-                            </td>
                             <td className="p-5 text-right flex justify-end gap-3">
                               <button type="button" onClick={() => setEditingLicense(license)} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
                               <button type="button" onClick={() => deleteLicense(license.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
                             </td>
                           </tr>
                         ))}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </>
+                )}
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto">
@@ -686,16 +744,23 @@ const AdminDashboard: React.FC = () => {
                       <input name="companyName" value={editingLicense.companyName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold mb-2">Equipment</label>
-                      <input name="equipmentName" value={editingLicense.equipmentName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                      <label className="block text-sm font-bold mb-2">Owner Name</label>
+                      <input type="text" name="licenseOwnerName" value={editingLicense.licenseOwnerName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" placeholder="Owner name" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div>
+                      <label className="block text-sm font-bold mb-2">Equipment</label>
+                      <input name="equipmentName" value={editingLicense.equipmentName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
+                    </div>
+                    <div>
                       <label className="block text-sm font-bold mb-2">Model</label>
                       <input name="model" value={editingLicense.model || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold mb-2">Serial</label>
                       <input name="serialNumber" value={editingLicense.serialNumber || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" />
@@ -728,11 +793,6 @@ const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2">License Owner Name</label>
-                    <input type="text" name="licenseOwnerName" value={editingLicense.licenseOwnerName || ''} onChange={handleLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" placeholder="Owner name" />
-                  </div>
-
-                  <div>
                     <label className="block text-sm font-bold mb-2">License Owner Photo</label>
                     <div className="flex gap-3 items-center">
                       <button type="button" onClick={handleLicensePhotoUpload} disabled={isSavingCert} className="px-4 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
@@ -761,30 +821,51 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             {!editingCert ? (
               <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div className="p-6 border-b flex justify-between items-center bg-white"><div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search certificates..." value={certificateSearch} onChange={(event) => setCertificateSearch(event.target.value)} className="pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm w-80" /></div><button type="button" onClick={createNewCertificate} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
-                <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Name</th><th className="p-5">Model</th><th className="p-5">Serial</th><th className="p-5">Production</th><th className="p-5">Inspection</th><th className="p-5">Expiry</th><th className="p-5">Certificate Status</th><th className="p-5">Equipment Status</th><th className="p-5 text-center">QR</th><th className="p-5 text-right">Edit</th></tr></thead>
-                  <tbody className="text-sm text-gray-700">
+                <div className="p-6 border-b flex justify-between items-center bg-white"><div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search certificates..." value={certificateSearch} onChange={(event) => setCertificateSearch(event.target.value)} className="pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm w-80" /></div><button type="button" onClick={createCertificateInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
+                {!selectedCertificateCompany ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">
                     {sortedCompanies.map((company) => (
-                      <React.Fragment key={company}>
-                        <tr className="bg-slate-100/70 border-y hover:bg-slate-200/70 transition-colors">
-                          <td colSpan={10} className="px-5 py-4 font-bold text-omega-dark">
-                            <button type="button" onClick={() => toggleCertificateFolder(company)} className="w-full flex items-center justify-between gap-3 text-left">
-                              <div className="flex items-center gap-3">
-                                {isCertificateFolderOpen(company) ? <ChevronDown size={18} className="text-gray-500" /> : <ChevronRight size={18} className="text-gray-500" />}
-                                <Folder size={22} className="text-omega-yellow" />
-                                <span>{company}</span>
-                              </div>
-                              <span className="text-xs text-gray-500 uppercase tracking-wide">{groupedCerts[company].length} Certificates</span>
-                            </button>
-                          </td>
-                        </tr>
-                        {isCertificateFolderOpen(company) && groupedCerts[company].map((cert) => (
+                      <button
+                        key={company}
+                        type="button"
+                        onClick={() => setSelectedCertificateCompany(company)}
+                        className="group bg-white border border-gray-200 rounded-xl p-5 text-left hover:border-omega-blue hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Folder size={34} className="text-omega-yellow shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-omega-dark truncate">{company}</p>
+                              <p className="text-xs text-gray-500 mt-1">{(groupedCerts[company] || []).length} certificates inside</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between gap-4">
+                      <div>
+                        <button type="button" onClick={() => setSelectedCertificateCompany(null)} className="text-sm font-bold text-omega-blue hover:underline">Back to companies</button>
+                        <h3 className="text-xl font-bold text-omega-dark mt-1">{selectedCertificateCompany}</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">{selectedCertificateRecords.length} Certificates</span>
+                        <button type="button" onClick={createCertificateInCompanyFolder} className="bg-omega-blue text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Plus size={14}/> New Certificate in this company</button>
+                      </div>
+                    </div>
+                    <table className="w-full text-left border-collapse">
+                      <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b"><th className="p-5">Company Name</th><th className="p-5">ID</th><th className="p-5">Equipment</th><th className="p-5">Model</th><th className="p-5">Serial</th><th className="p-5">Inspection</th><th className="p-5">Expiry</th><th className="p-5">Certificate Status</th><th className="p-5">Equipment Status</th><th className="p-5 text-center">QR</th><th className="p-5 text-right">Edit</th></tr></thead>
+                      <tbody className="text-sm text-gray-700">
+                        {selectedCertificateRecords.map((cert) => (
                           <tr key={cert.id} className="hover:bg-blue-50/30 border-b">
-                              <td className="p-5"><div className="font-bold">{cert.equipmentName}</div><div className="text-xs text-gray-500 mt-1">{cert.companyName}</div></td>
+                              <td className="p-5">{cert.companyName || '-'}</td>
+                              <td className="p-5 font-mono text-xs">{cert.id || '-'}</td>
+                              <td className="p-5 font-bold">{cert.equipmentName}</td>
                               <td className="p-5">{cert.model || '-'}</td>
                               <td className="p-5 font-mono text-xs">{cert.serialNumber}</td>
-                              <td className="p-5">{cert.productionDate || '-'}</td>
                               <td className="p-5">{cert.inspectionDate || '-'}</td>
                               <td className="p-5">{cert.expiryDate}</td>
                               <td className="p-5"><span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${
@@ -804,10 +885,10 @@ const AdminDashboard: React.FC = () => {
                               </td>
                           </tr>
                         ))}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </>
+                )}
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto">
@@ -816,15 +897,14 @@ const AdminDashboard: React.FC = () => {
                   
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold mb-2">Certificate ID (رقم الشهادة)</label>
-                      <input name="id" value={editingCert.id || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono text-blue-700 bg-blue-50 focus:outline-none focus:border-blue-400" placeholder="e.g. C-12345" />
-                    </div>
-                    <div>
                       <label className="block text-sm font-bold mb-2">Company Name</label>
                       <input name="companyName" value={editingCert.companyName || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" />
                     </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2">Certificate ID</label>
+                      <input name="id" value={editingCert.id || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono text-blue-700 bg-blue-50 focus:outline-none focus:border-blue-400" placeholder="e.g. C-12345" />
+                    </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold mb-2">Equipment</label><input name="equipmentName" value={editingCert.equipmentName || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
                     <div><label className="block text-sm font-bold mb-2">Model</label><input name="model" value={editingCert.model || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
@@ -832,7 +912,6 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold mb-2">Serial</label><input name="serialNumber" value={editingCert.serialNumber || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg font-mono" /></div>
-                    <div><label className="block text-sm font-bold mb-2">Production Date</label><input type="date" name="productionDate" value={editingCert.productionDate || ''} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
@@ -845,18 +924,18 @@ const AdminDashboard: React.FC = () => {
                   
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold mb-2">Equipment Status (حالة المعدة)</label>
+                      <label className="block text-sm font-bold mb-2">Equipment Status (Ø­Ø§Ù„Ø© Ø§Ù„Ù…Ø¹Ø¯Ø©)</label>
                       <select name="equipmentStatus" value={editingCert.equipmentStatus || 'Accepted'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
-                        <option value="Accepted">Accepted (مقبولة)</option>
-                        <option value="Rejected">Rejected (مرفوضة)</option>
+                        <option value="Accepted">Accepted (Ù…Ù‚Ø¨ÙˆÙ„Ø©)</option>
+                        <option value="Rejected">Rejected (Ù…Ø±ÙÙˆØ¶Ø©)</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold mb-2">Certificate Status (حالة الشهادة)</label>
+                      <label className="block text-sm font-bold mb-2">Certificate Status (Ø­Ø§Ù„Ø© Ø§Ù„Ø´Ù‡Ø§Ø¯Ø©)</label>
                       <select name="status" value={editingCert.status || 'valid'} onChange={handleCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg bg-gray-50 outline-none">
-                        <option value="valid">Valid (سارية)</option>
-                        <option value="expiring">Expiring Soon (تنتهي قريباً)</option>
-                        <option value="expired">Expired (منتهية الصلاحية)</option>
+                        <option value="valid">Valid (Ø³Ø§Ø±ÙŠØ©)</option>
+                        <option value="expiring">Expiring Soon (ØªÙ†ØªÙ‡ÙŠ Ù‚Ø±ÙŠØ¨Ø§Ù‹)</option>
+                        <option value="expired">Expired (Ù…Ù†ØªÙ‡ÙŠØ© Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ©)</option>
                       </select>
                     </div>
                   </div>
@@ -895,3 +974,4 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
+
