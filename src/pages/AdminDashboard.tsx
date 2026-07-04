@@ -148,7 +148,14 @@ const AdminDashboard: React.FC = () => {
   const deleteService = (id: string) => { if (confirm('Delete?')) updateServices(services.filter(s => s.id !== id)); };
 
   // === CERTIFICATES ===
-  const handleCertChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingCert) setEditingCert({ ...editingCert, [e.target.name]: e.target.value }); };
+  const handleCertChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingCert) return;
+    setEditingCert({
+      ...editingCert,
+      [e.target.name]: e.target.value,
+      ...(e.target.name === 'status' ? { statusManuallySet: true } : {})
+    });
+  };
   const handleLicenseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { if (editingLicense) setEditingLicense({ ...editingLicense, [e.target.name]: e.target.value }); };
   
   const handleLicensePhotoUpload = () => {
@@ -174,7 +181,7 @@ const AdminDashboard: React.FC = () => {
       let status = editingCert.status || 'valid';
       
       // If the admin did not set a status manually, calculate it from the expiry date.
-      if (!editingCert.status) {
+      if (!editingCert.statusManuallySet) {
         const today = new Date(); 
         const expDate = new Date(editingCert.expiryDate || today); 
         const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24)); 
@@ -187,6 +194,7 @@ const AdminDashboard: React.FC = () => {
         ...editingCert, 
         id: editingCert.id.trim(), 
         status, 
+        statusManuallySet: Boolean(editingCert.statusManuallySet),
         equipmentStatus: editingCert.equipmentStatus || 'Accepted',
         companyName: editingCert.companyName || 'Unassigned / Others' 
       }; 

@@ -41,6 +41,7 @@ export interface InspectionCertificate {
   inspectionDate: string;
   expiryDate: string;
   status: 'valid' | 'expiring' | 'expired';
+  statusManuallySet?: boolean;
   equipmentStatus?: 'Accepted' | 'Rejected'; // حقل حالة المعدة الجديد
   model?: string;
   licenseOwnerName?: string;

@@ -133,7 +133,7 @@ export const api = {
           const certificate = snapshot.data() as InspectionCertificate;
           const status = getComputedStatus(certificate.expiryDate);
 
-          if (status && certificate.status !== status) {
+          if (!certificate.statusManuallySet && status && certificate.status !== status) {
             certificate.status = status;
             updates.push(setDoc(doc(db, "certificates", snapshot.id), certificate));
           }
