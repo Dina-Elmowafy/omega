@@ -328,6 +328,46 @@ const AdminDashboard: React.FC = () => {
   const selectedCertificateRecords = selectedCertificateCompany ? groupedCerts[selectedCertificateCompany] || [] : [];
   const selectedLicenseRecords = selectedLicenseCompany ? groupedLicenses[selectedLicenseCompany] || [] : [];
 
+  const deleteCertificateFolder = async (company: string) => {
+    const folderRecords = certificates.filter((cert) => normalizeCompanyFolderName(cert.companyName) === company);
+    const message = folderRecords.length > 0
+      ? `Delete "${company}" folder and move ${folderRecords.length} certificate(s) to Trash?`
+      : `Delete empty "${company}" folder?`;
+    if (!confirm(message)) return;
+
+    try {
+      for (const cert of folderRecords) {
+        await api.certificates.delete(cert.id);
+      }
+      setManualCertificateCompanies((current) => current.filter((name) => normalizeCompanyFolderName(name) !== company));
+      if (selectedCertificateCompany === company) setSelectedCertificateCompany(null);
+      await refreshData();
+      toast.success('Folder deleted');
+    } catch (error) {
+      toast.error('Error deleting folder');
+    }
+  };
+
+  const deleteLicenseFolder = async (company: string) => {
+    const folderRecords = licenses.filter((license) => normalizeCompanyFolderName(license.companyName) === company);
+    const message = folderRecords.length > 0
+      ? `Delete "${company}" folder and move ${folderRecords.length} license(s) to Trash?`
+      : `Delete empty "${company}" folder?`;
+    if (!confirm(message)) return;
+
+    try {
+      for (const license of folderRecords) {
+        await api.licenses.delete(license.id);
+      }
+      setManualLicenseCompanies((current) => current.filter((name) => normalizeCompanyFolderName(name) !== company));
+      if (selectedLicenseCompany === company) setSelectedLicenseCompany(null);
+      await refreshData();
+      toast.success('Folder deleted');
+    } catch (error) {
+      toast.error('Error deleting folder');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
       <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col shadow-xl z-10">
@@ -670,23 +710,24 @@ const AdminDashboard: React.FC = () => {
                 {!selectedLicenseCompany ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">
                     {sortedLicenseCompanies.map((company) => (
-                      <button
+                      <div
                         key={company}
-                        type="button"
-                        onClick={() => setSelectedLicenseCompany(company)}
                         className="group bg-white border border-gray-200 rounded-xl p-5 text-left hover:border-omega-blue hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
+                          <button type="button" onClick={() => setSelectedLicenseCompany(company)} className="flex items-center gap-3 min-w-0 text-left flex-1">
                             <Folder size={34} className="text-omega-yellow shrink-0" />
                             <div className="min-w-0">
                               <p className="font-bold text-omega-dark truncate">{company}</p>
                               <p className="text-xs text-gray-500 mt-1">{(groupedLicenses[company] || []).length} licenses inside</p>
                             </div>
+                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button type="button" onClick={() => setSelectedLicenseCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button>
+                            <button type="button" onClick={() => deleteLicenseFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} license folder`} title="Delete folder"><Trash2 size={16} /></button>
                           </div>
-                          <span className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</span>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -825,23 +866,24 @@ const AdminDashboard: React.FC = () => {
                 {!selectedCertificateCompany ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">
                     {sortedCompanies.map((company) => (
-                      <button
+                      <div
                         key={company}
-                        type="button"
-                        onClick={() => setSelectedCertificateCompany(company)}
                         className="group bg-white border border-gray-200 rounded-xl p-5 text-left hover:border-omega-blue hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
+                          <button type="button" onClick={() => setSelectedCertificateCompany(company)} className="flex items-center gap-3 min-w-0 text-left flex-1">
                             <Folder size={34} className="text-omega-yellow shrink-0" />
                             <div className="min-w-0">
                               <p className="font-bold text-omega-dark truncate">{company}</p>
                               <p className="text-xs text-gray-500 mt-1">{(groupedCerts[company] || []).length} certificates inside</p>
                             </div>
+                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button type="button" onClick={() => setSelectedCertificateCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button>
+                            <button type="button" onClick={() => deleteCertificateFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} certificate folder`} title="Delete folder"><Trash2 size={16} /></button>
                           </div>
-                          <span className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</span>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 ) : (
