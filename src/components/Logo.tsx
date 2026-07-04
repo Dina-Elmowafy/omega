@@ -41,7 +41,7 @@ const Logo: React.FC<LogoProps> = ({ variant = 'dark', className = '', showSubti
       {/* Subtitle */}
       {showSubtitle && (
         <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-widest mt-1 ml-1" style={{ color: primaryTextColor }}>
-          Contracting & Petroleum Services CO
+          Petroleum & Construction Services CO
         </span>
       )}
     </div>
