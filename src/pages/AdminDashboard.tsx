@@ -54,6 +54,8 @@ const AdminDashboard: React.FC = () => {
   const [localCompanyInfo, setLocalCompanyInfo] = useState<CompanyInfo>(companyInfo);
   const [certificateSearch, setCertificateSearch] = useState('');
   const [licenseSearch, setLicenseSearch] = useState('');
+  const [newCertificateSearch, setNewCertificateSearch] = useState('');
+  const [newLicenseSearch, setNewLicenseSearch] = useState('');
   const [selectedCertificateCompany, setSelectedCertificateCompany] = useState<string | null>(null);
   const [selectedLicenseCompany, setSelectedLicenseCompany] = useState<string | null>(null);
   const [selectedNewCertificateCompany, setSelectedNewCertificateCompany] = useState<string | null>(null);
@@ -404,6 +406,12 @@ const AdminDashboard: React.FC = () => {
       item.serialNumber,
       item.id,
       item.licenseOwnerName,
+      item.personName,
+      item.drivingLicenseNumber,
+      item.vehicleType,
+      item.brand,
+      item.plateNumber,
+      item.chassisNumber,
       item.inspectionDate,
       item.expiryDate,
       item.status,
@@ -413,6 +421,8 @@ const AdminDashboard: React.FC = () => {
 
   const visibleCertificates = certificates.filter(cert => matchesSearch(cert as unknown as Record<string, unknown>, certificateSearch));
   const visibleLicenses = licenses.filter(license => matchesSearch(license as unknown as Record<string, unknown>, licenseSearch));
+  const visibleNewCertificates = newCertificates.filter(cert => matchesSearch(cert as unknown as Record<string, unknown>, newCertificateSearch));
+  const visibleNewLicenses = newLicenses.filter(license => matchesSearch(license as unknown as Record<string, unknown>, newLicenseSearch));
 
   const normalizeCompanyFolderName = (name?: string | null) => {
     const cleaned = String(name || '').trim().replace(/\s+/g, ' ');
@@ -434,11 +444,11 @@ const AdminDashboard: React.FC = () => {
   const sortedLicenseCompanies = licenseCompanyNames.sort((a, b) => a.localeCompare(b));
   const selectedCertificateRecords = selectedCertificateCompany ? groupedCerts[selectedCertificateCompany] || [] : [];
   const selectedLicenseRecords = selectedLicenseCompany ? groupedLicenses[selectedLicenseCompany] || [] : [];
-  const groupedNewCertificates = newCertificates.reduce((acc, cert) => { const company = normalizeCompanyFolderName(cert.companyName); if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof newCertificates>);
-  const newCertificateCompanies = Array.from(new Set([...Object.keys(groupedNewCertificates), ...manualNewCertificateCompanies.map(normalizeCompanyFolderName)])).sort((a, b) => a.localeCompare(b));
+  const groupedNewCertificates = visibleNewCertificates.reduce((acc, cert) => { const company = normalizeCompanyFolderName(cert.companyName); if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof visibleNewCertificates>);
+  const newCertificateCompanies = Array.from(new Set([...Object.keys(groupedNewCertificates), ...manualNewCertificateCompanies.map(normalizeCompanyFolderName).filter((company) => !newCertificateSearch.trim() || company.toLowerCase().includes(newCertificateSearch.toLowerCase().trim()))])).sort((a, b) => a.localeCompare(b));
   const selectedNewCertificateRecords = selectedNewCertificateCompany ? groupedNewCertificates[selectedNewCertificateCompany] || [] : [];
-  const groupedNewLicenses = newLicenses.reduce((acc, license) => { const company = normalizeCompanyFolderName(license.companyName); if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof newLicenses>);
-  const newLicenseCompanies = Array.from(new Set([...Object.keys(groupedNewLicenses), ...manualNewLicenseCompanies.map(normalizeCompanyFolderName)])).sort((a, b) => a.localeCompare(b));
+  const groupedNewLicenses = visibleNewLicenses.reduce((acc, license) => { const company = normalizeCompanyFolderName(license.companyName); if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof visibleNewLicenses>);
+  const newLicenseCompanies = Array.from(new Set([...Object.keys(groupedNewLicenses), ...manualNewLicenseCompanies.map(normalizeCompanyFolderName).filter((company) => !newLicenseSearch.trim() || company.toLowerCase().includes(newLicenseSearch.toLowerCase().trim()))])).sort((a, b) => a.localeCompare(b));
   const selectedNewLicenseRecords = selectedNewLicenseCompany ? groupedNewLicenses[selectedNewLicenseCompany] || [] : [];
 
   const createNewCertificateInCompanyFolder = () => {
@@ -532,6 +542,70 @@ const AdminDashboard: React.FC = () => {
       await refreshData();
       toast.success('Folder deleted');
     } catch (error) {
+      toast.error('Error deleting folder');
+    }
+  };
+
+  const renameNewCertificateFolder = async (company: string) => {
+    const newCompanyName = normalizeCompanyFolderName(window.prompt('New folder name', company));
+    if (!newCompanyName || newCompanyName === company) return;
+
+    try {
+      for (const cert of newCertificates.filter((item) => normalizeCompanyFolderName(item.companyName) === company)) {
+        await api.newCertificates.addOrUpdate({ ...cert, companyName: newCompanyName });
+      }
+      setManualNewCertificateCompanies((current) => Array.from(new Set([...current.filter((name) => normalizeCompanyFolderName(name) !== company), newCompanyName])));
+      if (selectedNewCertificateCompany === company) setSelectedNewCertificateCompany(newCompanyName);
+      await refreshData();
+      toast.success('Folder renamed');
+    } catch {
+      toast.error('Error renaming folder');
+    }
+  };
+
+  const deleteNewCertificateFolder = async (company: string) => {
+    const folderRecords = newCertificates.filter((item) => normalizeCompanyFolderName(item.companyName) === company);
+    if (!confirm(folderRecords.length ? `Delete "${company}" folder and its ${folderRecords.length} certificate(s)?` : `Delete empty "${company}" folder?`)) return;
+
+    try {
+      for (const cert of folderRecords) await api.newCertificates.delete(cert.id);
+      setManualNewCertificateCompanies((current) => current.filter((name) => normalizeCompanyFolderName(name) !== company));
+      if (selectedNewCertificateCompany === company) setSelectedNewCertificateCompany(null);
+      await refreshData();
+      toast.success('Folder deleted');
+    } catch {
+      toast.error('Error deleting folder');
+    }
+  };
+
+  const renameNewLicenseFolder = async (company: string) => {
+    const newCompanyName = normalizeCompanyFolderName(window.prompt('New folder name', company));
+    if (!newCompanyName || newCompanyName === company) return;
+
+    try {
+      for (const license of newLicenses.filter((item) => normalizeCompanyFolderName(item.companyName) === company)) {
+        await api.newLicenses.addOrUpdate({ ...license, companyName: newCompanyName });
+      }
+      setManualNewLicenseCompanies((current) => Array.from(new Set([...current.filter((name) => normalizeCompanyFolderName(name) !== company), newCompanyName])));
+      if (selectedNewLicenseCompany === company) setSelectedNewLicenseCompany(newCompanyName);
+      await refreshData();
+      toast.success('Folder renamed');
+    } catch {
+      toast.error('Error renaming folder');
+    }
+  };
+
+  const deleteNewLicenseFolder = async (company: string) => {
+    const folderRecords = newLicenses.filter((item) => normalizeCompanyFolderName(item.companyName) === company);
+    if (!confirm(folderRecords.length ? `Delete "${company}" folder and its ${folderRecords.length} license(s)?` : `Delete empty "${company}" folder?`)) return;
+
+    try {
+      for (const license of folderRecords) await api.newLicenses.delete(license.id);
+      setManualNewLicenseCompanies((current) => current.filter((name) => normalizeCompanyFolderName(name) !== company));
+      if (selectedNewLicenseCompany === company) setSelectedNewLicenseCompany(null);
+      await refreshData();
+      toast.success('Folder deleted');
+    } catch {
       toast.error('Error deleting folder');
     }
   };
@@ -1180,8 +1254,8 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             {!editingNewCert ? (
               <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div className="p-6 border-b flex justify-between items-center"><div><h2 className="text-xl font-bold text-omega-dark">New Certificates</h2><p className="text-sm text-gray-500 mt-1">Organized by company folders.</p></div><button type="button" onClick={createNewCertificateInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
-                {!selectedNewCertificateCompany ? <div className="grid md:grid-cols-3 gap-4 p-6 bg-gray-50">{newCertificateCompanies.map((company) => <button key={company} type="button" onClick={() => setSelectedNewCertificateCompany(company)} className="bg-white border rounded-xl p-5 text-left hover:border-omega-blue"><Folder className="text-omega-yellow mb-3" size={30}/><p className="font-bold">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewCertificates[company] || []).length} certificates</p></button>)}</div> : <><div className="px-6 py-4 bg-gray-50 flex justify-between"><button type="button" onClick={() => setSelectedNewCertificateCompany(null)} className="text-omega-blue font-bold">Back to companies</button><button type="button" onClick={createNewCertificateInCompanyFolder} className="text-omega-blue font-bold">+ Add here</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">ID</th><th className="p-4">Vehicle</th><th className="p-4">Brand / Model</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewCertificateRecords.map((cert) => <tr key={cert.id} className="border-t"><td className="p-4 font-mono">{cert.id}</td><td className="p-4">{cert.vehicleType}</td><td className="p-4">{cert.brand} {cert.model}</td><td className="p-4">{cert.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-certificate/${cert.barcodeId || cert.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewCert({ ...cert, barcodeId: cert.barcodeId || cert.id, originalId: cert.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewCertificate(cert.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
+                <div className="p-6 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search new certificates..." value={newCertificateSearch} onChange={(event) => setNewCertificateSearch(event.target.value)} className="w-full sm:w-80 pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm" /></div><button type="button" onClick={createNewCertificateInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
+                {!selectedNewCertificateCompany ? <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">{newCertificateCompanies.map((company) => <div key={company} className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-omega-blue hover:shadow-md transition-all"><div className="flex items-start justify-between gap-4"><button type="button" onClick={() => setSelectedNewCertificateCompany(company)} className="flex items-center gap-3 min-w-0 text-left flex-1"><Folder size={34} className="text-omega-yellow shrink-0" /><div className="min-w-0"><p className="font-bold text-omega-dark truncate">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewCertificates[company] || []).length} certificates inside</p></div></button><div className="flex items-center gap-2 shrink-0"><button type="button" onClick={() => setSelectedNewCertificateCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button><button type="button" onClick={() => renameNewCertificateFolder(company)} className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700" aria-label={`Rename ${company} new certificate folder`} title="Rename folder"><Edit2 size={16} /></button><button type="button" onClick={() => deleteNewCertificateFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} new certificate folder`} title="Delete folder"><Trash2 size={16} /></button></div></div></div>)}</div> : <><div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between gap-4"><div><button type="button" onClick={() => setSelectedNewCertificateCompany(null)} className="text-sm font-bold text-omega-blue hover:underline">Back to companies</button><h3 className="text-xl font-bold text-omega-dark mt-1">{selectedNewCertificateCompany}</h3></div><div className="flex items-center gap-3"><span className="text-xs text-gray-500 uppercase tracking-wide">{selectedNewCertificateRecords.length} Certificates</span><button type="button" onClick={createNewCertificateInCompanyFolder} className="bg-omega-blue text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Plus size={14}/> New Certificate in this company</button></div></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">ID</th><th className="p-4">Vehicle</th><th className="p-4">Brand / Model</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewCertificateRecords.map((cert) => <tr key={cert.id} className="border-t"><td className="p-4 font-mono">{cert.id}</td><td className="p-4">{cert.vehicleType}</td><td className="p-4">{cert.brand} {cert.model}</td><td className="p-4">{cert.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-certificate/${cert.barcodeId || cert.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewCert({ ...cert, barcodeId: cert.barcodeId || cert.id, originalId: cert.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewCertificate(cert.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
                 {!newCertificateCompanies.length && <p className="p-8 text-center text-gray-500">No new certificates yet.</p>}
               </div>
             ) : (
@@ -1201,8 +1275,8 @@ const AdminDashboard: React.FC = () => {
         {activeTab === 'newLicenses' && (
           <div className="space-y-6">
             {!editingNewLicense ? <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="p-6 border-b flex justify-between items-center"><div><h2 className="text-xl font-bold text-omega-dark">New Licenses</h2><p className="text-sm text-gray-500 mt-1">No owner photo — organized by company folders.</p></div><button type="button" onClick={createNewLicenseInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex gap-2"><Plus size={16}/> New License</button></div>
-              {!selectedNewLicenseCompany ? <div className="grid md:grid-cols-3 gap-4 p-6 bg-gray-50">{newLicenseCompanies.map((company) => <button key={company} type="button" onClick={() => setSelectedNewLicenseCompany(company)} className="bg-white border rounded-xl p-5 text-left hover:border-omega-blue"><Folder className="text-omega-yellow mb-3" size={30}/><p className="font-bold">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewLicenses[company] || []).length} licenses</p></button>)}</div> : <><div className="px-6 py-4 bg-gray-50 flex justify-between"><button type="button" onClick={() => setSelectedNewLicenseCompany(null)} className="text-omega-blue font-bold">Back to companies</button><button type="button" onClick={createNewLicenseInCompanyFolder} className="text-omega-blue font-bold">+ Add here</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">Certificate ID</th><th className="p-4">Person</th><th className="p-4">Driving License</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewLicenseRecords.map((license) => <tr key={license.id} className="border-t"><td className="p-4 font-mono">{license.id}</td><td className="p-4">{license.personName}</td><td className="p-4 font-mono">{license.drivingLicenseNumber}</td><td className="p-4">{license.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-license/${license.barcodeId || license.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewLicense({ ...license, barcodeId: license.barcodeId || license.id, originalId: license.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewLicense(license.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
+              <div className="p-6 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search new licenses..." value={newLicenseSearch} onChange={(event) => setNewLicenseSearch(event.target.value)} className="w-full sm:w-80 pl-10 pr-4 py-3 bg-gray-50 border rounded-full text-sm" /></div><button type="button" onClick={createNewLicenseInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex gap-2"><Plus size={16}/> New License</button></div>
+              {!selectedNewLicenseCompany ? <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6 bg-gray-50">{newLicenseCompanies.map((company) => <div key={company} className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-omega-blue hover:shadow-md transition-all"><div className="flex items-start justify-between gap-4"><button type="button" onClick={() => setSelectedNewLicenseCompany(company)} className="flex items-center gap-3 min-w-0 text-left flex-1"><Folder size={34} className="text-omega-yellow shrink-0" /><div className="min-w-0"><p className="font-bold text-omega-dark truncate">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewLicenses[company] || []).length} licenses inside</p></div></button><div className="flex items-center gap-2 shrink-0"><button type="button" onClick={() => setSelectedNewLicenseCompany(company)} className="text-xs font-bold text-omega-blue opacity-0 group-hover:opacity-100 transition-opacity">Open</button><button type="button" onClick={() => renameNewLicenseFolder(company)} className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700" aria-label={`Rename ${company} new license folder`} title="Rename folder"><Edit2 size={16} /></button><button type="button" onClick={() => deleteNewLicenseFolder(company)} className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${company} new license folder`} title="Delete folder"><Trash2 size={16} /></button></div></div></div>)}</div> : <><div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between gap-4"><div><button type="button" onClick={() => setSelectedNewLicenseCompany(null)} className="text-sm font-bold text-omega-blue hover:underline">Back to companies</button><h3 className="text-xl font-bold text-omega-dark mt-1">{selectedNewLicenseCompany}</h3></div><div className="flex items-center gap-3"><span className="text-xs text-gray-500 uppercase tracking-wide">{selectedNewLicenseRecords.length} Licenses</span><button type="button" onClick={createNewLicenseInCompanyFolder} className="bg-omega-blue text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Plus size={14}/> New License in this company</button></div></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">Certificate ID</th><th className="p-4">Person</th><th className="p-4">Driving License</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewLicenseRecords.map((license) => <tr key={license.id} className="border-t"><td className="p-4 font-mono">{license.id}</td><td className="p-4">{license.personName}</td><td className="p-4 font-mono">{license.drivingLicenseNumber}</td><td className="p-4">{license.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-license/${license.barcodeId || license.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewLicense({ ...license, barcodeId: license.barcodeId || license.id, originalId: license.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewLicense(license.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
               {!newLicenseCompanies.length && <p className="p-8 text-center text-gray-500">No new licenses yet.</p>}
             </div> : <div className="bg-white p-8 rounded-xl shadow-sm border max-w-3xl mx-auto"><div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingNewLicense.id ? 'Edit New License' : 'New License'}</h3><button type="button" onClick={() => setEditingNewLicense(null)} className="p-2 bg-gray-50 rounded-full"><X size={20}/></button></div><div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-5"><FormField label="Company Name / اسم الشركة" name="companyName" value={editingNewLicense.companyName} onChange={handleNewLicenseChange} disabled={isSavingCert} /><FormField label="Certificate ID / رقم الشهادة" name="id" value={editingNewLicense.id} onChange={handleNewLicenseChange} disabled={isSavingCert} /></div>
