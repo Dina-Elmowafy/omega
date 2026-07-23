@@ -10,6 +10,29 @@ import { api } from '../services/api';
 import { HomePageContent, CompanyInfo, AboutPageContent } from '../types';
 import toast from 'react-hot-toast';
 
+type FormFieldProps = {
+  label: string;
+  name: string;
+  value?: string;
+  type?: string;
+  disabled?: boolean;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+};
+
+const FormField: React.FC<FormFieldProps> = ({ label, name, value, type = 'text', disabled = false, onChange }) => (
+  <div>
+    <label className="block text-sm font-bold mb-2">{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value || ''}
+      onChange={onChange}
+      disabled={disabled}
+      className="w-full p-3 border rounded-lg text-slate-900 bg-white"
+    />
+  </div>
+);
+
 const AdminDashboard: React.FC = () => {
   const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, newCertificates, newLicenses, licenses, deletedCertificates, deletedLicenses, refreshData } = useData();
   const { user, logout } = useAuth();
@@ -180,13 +203,6 @@ const AdminDashboard: React.FC = () => {
     if (!editingNewLicense) return;
     setEditingNewLicense({ ...editingNewLicense, [e.target.name]: e.target.value, ...(e.target.name === 'status' ? { statusManuallySet: true } : {}) });
   };
-  const Field: React.FC<{ label: string; name: string; value?: string; type?: string }> = ({ label, name, value, type = 'text' }) => (
-    <div><label className="block text-sm font-bold mb-2">{label}</label><input type={type} name={name} value={value || ''} onChange={handleNewCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
-  );
-  const NewLicenseField: React.FC<{ label: string; name: string; value?: string; type?: string }> = ({ label, name, value, type = 'text' }) => (
-    <div><label className="block text-sm font-bold mb-2">{label}</label><input type={type} name={name} value={value || ''} onChange={handleNewLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
-  );
-  
   const handleLicensePhotoUpload = () => {
     if (!editingLicense) return;
     openImageEditor((croppedImage) => {
@@ -1170,13 +1186,13 @@ const AdminDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl shadow-sm border max-w-3xl mx-auto"><div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingNewCert.id ? 'Edit New Certificate' : 'New Certificate'}</h3><button type="button" onClick={() => setEditingNewCert(null)} className="p-2 bg-gray-50 rounded-full"><X size={20}/></button></div><div className="space-y-5">
-                <div className="grid md:grid-cols-2 gap-5"><Field label="Company Name / اسم الشركة" name="companyName" value={editingNewCert.companyName} /><Field label="Certificate ID / رقم الشهادة" name="id" value={editingNewCert.id} /></div>
-                <div className="grid md:grid-cols-2 gap-5"><Field label="Vehicle Type / نوع المركبة" name="vehicleType" value={editingNewCert.vehicleType} /><Field label="Brand / الماركة" name="brand" value={editingNewCert.brand} /></div>
-                <div className="grid md:grid-cols-2 gap-5"><Field label="Model / الموديل" name="model" value={editingNewCert.model} /><Field label="Plate Number / رقم اللوحات" name="plateNumber" value={editingNewCert.plateNumber} /></div>
-                <Field label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewCert.chassisNumber} />
-                <div className="grid md:grid-cols-2 gap-5"><Field label="Inspection Date" name="inspectionDate" type="date" value={editingNewCert.inspectionDate} /><Field label="Expiry Date" name="expiryDate" type="date" value={editingNewCert.expiryDate} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><FormField label="Company Name / اسم الشركة" name="companyName" value={editingNewCert.companyName} onChange={handleNewCertChange} disabled={isSavingCert} /><FormField label="Certificate ID / رقم الشهادة" name="id" value={editingNewCert.id} onChange={handleNewCertChange} disabled={isSavingCert} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><FormField label="Vehicle Type / نوع المركبة" name="vehicleType" value={editingNewCert.vehicleType} onChange={handleNewCertChange} disabled={isSavingCert} /><FormField label="Brand / الماركة" name="brand" value={editingNewCert.brand} onChange={handleNewCertChange} disabled={isSavingCert} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><FormField label="Model / الموديل" name="model" value={editingNewCert.model} onChange={handleNewCertChange} disabled={isSavingCert} /><FormField label="Plate Number / رقم اللوحات" name="plateNumber" value={editingNewCert.plateNumber} onChange={handleNewCertChange} disabled={isSavingCert} /></div>
+                <FormField label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewCert.chassisNumber} onChange={handleNewCertChange} disabled={isSavingCert} />
+                <div className="grid md:grid-cols-2 gap-5"><FormField label="Inspection Date" name="inspectionDate" type="date" value={editingNewCert.inspectionDate} onChange={handleNewCertChange} disabled={isSavingCert} /><FormField label="Expiry Date" name="expiryDate" type="date" value={editingNewCert.expiryDate} onChange={handleNewCertChange} disabled={isSavingCert} /></div>
                 <div className="grid md:grid-cols-2 gap-5"><div><label className="block text-sm font-bold mb-2">Acceptance / مقبولة؟</label><select name="equipmentStatus" value={editingNewCert.equipmentStatus} onChange={handleNewCertChange} className="w-full p-3 border rounded-lg"><option value="Accepted">Accepted / مقبولة</option><option value="Rejected">Rejected / مرفوضة</option></select></div><div><label className="block text-sm font-bold mb-2">Validity / سارية؟</label><select name="status" value={editingNewCert.status} onChange={handleNewCertChange} className="w-full p-3 border rounded-lg"><option value="valid">Valid / سارية</option><option value="expiring">Expiring Soon / تنتهي قريباً</option><option value="expired">Expired / منتهية</option></select></div></div>
-                <Field label="PDF / Image Link" name="pdfUrl" value={editingNewCert.pdfUrl} type="url" />
+                <FormField label="PDF / Image Link" name="pdfUrl" value={editingNewCert.pdfUrl} type="url" onChange={handleNewCertChange} disabled={isSavingCert} />
                 <div className="flex gap-4 pt-6 border-t"><button type="button" onClick={saveNewCertificate} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold">{isSavingCert ? 'Saving...' : 'Save Certificate'}</button><button type="button" onClick={() => setEditingNewCert(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
               </div></div>
             )}
@@ -1189,11 +1205,11 @@ const AdminDashboard: React.FC = () => {
               {!selectedNewLicenseCompany ? <div className="grid md:grid-cols-3 gap-4 p-6 bg-gray-50">{newLicenseCompanies.map((company) => <button key={company} type="button" onClick={() => setSelectedNewLicenseCompany(company)} className="bg-white border rounded-xl p-5 text-left hover:border-omega-blue"><Folder className="text-omega-yellow mb-3" size={30}/><p className="font-bold">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewLicenses[company] || []).length} licenses</p></button>)}</div> : <><div className="px-6 py-4 bg-gray-50 flex justify-between"><button type="button" onClick={() => setSelectedNewLicenseCompany(null)} className="text-omega-blue font-bold">Back to companies</button><button type="button" onClick={createNewLicenseInCompanyFolder} className="text-omega-blue font-bold">+ Add here</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">Certificate ID</th><th className="p-4">Person</th><th className="p-4">Driving License</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewLicenseRecords.map((license) => <tr key={license.id} className="border-t"><td className="p-4 font-mono">{license.id}</td><td className="p-4">{license.personName}</td><td className="p-4 font-mono">{license.drivingLicenseNumber}</td><td className="p-4">{license.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-license/${license.barcodeId || license.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewLicense({ ...license, barcodeId: license.barcodeId || license.id, originalId: license.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewLicense(license.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
               {!newLicenseCompanies.length && <p className="p-8 text-center text-gray-500">No new licenses yet.</p>}
             </div> : <div className="bg-white p-8 rounded-xl shadow-sm border max-w-3xl mx-auto"><div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingNewLicense.id ? 'Edit New License' : 'New License'}</h3><button type="button" onClick={() => setEditingNewLicense(null)} className="p-2 bg-gray-50 rounded-full"><X size={20}/></button></div><div className="space-y-5">
-              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Company Name / اسم الشركة" name="companyName" value={editingNewLicense.companyName}/><NewLicenseField label="Certificate ID / رقم الشهادة" name="id" value={editingNewLicense.id}/></div>
-              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Person Name / اسم الشخص" name="personName" value={editingNewLicense.personName}/><NewLicenseField label="Driving License Number / رقم رخصة القيادة" name="drivingLicenseNumber" value={editingNewLicense.drivingLicenseNumber}/></div>
-              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Vehicle Plate Number / رقم اللوحات" name="plateNumber" value={editingNewLicense.plateNumber}/><NewLicenseField label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewLicense.chassisNumber}/></div>
-              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Inspection Date" name="inspectionDate" type="date" value={editingNewLicense.inspectionDate}/><NewLicenseField label="Expiry Date" name="expiryDate" type="date" value={editingNewLicense.expiryDate}/></div>
-              <div><label className="block text-sm font-bold mb-2">Validity / سارية؟</label><select name="status" value={editingNewLicense.status} onChange={handleNewLicenseChange} className="w-full p-3 border rounded-lg"><option value="valid">Valid / سارية</option><option value="expiring">Expiring Soon / تنتهي قريباً</option><option value="expired">Expired / منتهية</option></select></div><NewLicenseField label="PDF Link" name="pdfUrl" type="url" value={editingNewLicense.pdfUrl}/>
+              <div className="grid md:grid-cols-2 gap-5"><FormField label="Company Name / اسم الشركة" name="companyName" value={editingNewLicense.companyName} onChange={handleNewLicenseChange} disabled={isSavingCert} /><FormField label="Certificate ID / رقم الشهادة" name="id" value={editingNewLicense.id} onChange={handleNewLicenseChange} disabled={isSavingCert} /></div>
+              <div className="grid md:grid-cols-2 gap-5"><FormField label="Person Name / اسم الشخص" name="personName" value={editingNewLicense.personName} onChange={handleNewLicenseChange} disabled={isSavingCert} /><FormField label="Driving License Number / رقم رخصة القيادة" name="drivingLicenseNumber" value={editingNewLicense.drivingLicenseNumber} onChange={handleNewLicenseChange} disabled={isSavingCert} /></div>
+              <div className="grid md:grid-cols-2 gap-5"><FormField label="Vehicle Plate Number / رقم اللوحات" name="plateNumber" value={editingNewLicense.plateNumber} onChange={handleNewLicenseChange} disabled={isSavingCert} /><FormField label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewLicense.chassisNumber} onChange={handleNewLicenseChange} disabled={isSavingCert} /></div>
+              <div className="grid md:grid-cols-2 gap-5"><FormField label="Inspection Date" name="inspectionDate" type="date" value={editingNewLicense.inspectionDate} onChange={handleNewLicenseChange} disabled={isSavingCert} /><FormField label="Expiry Date" name="expiryDate" type="date" value={editingNewLicense.expiryDate} onChange={handleNewLicenseChange} disabled={isSavingCert} /></div>
+              <div><label className="block text-sm font-bold mb-2">Validity / سارية؟</label><select name="status" value={editingNewLicense.status} onChange={handleNewLicenseChange} className="w-full p-3 border rounded-lg"><option value="valid">Valid / سارية</option><option value="expiring">Expiring Soon / تنتهي قريباً</option><option value="expired">Expired / منتهية</option></select></div><FormField label="PDF Link" name="pdfUrl" type="url" value={editingNewLicense.pdfUrl} onChange={handleNewLicenseChange} disabled={isSavingCert} />
               <div className="flex gap-4 pt-6 border-t"><button type="button" onClick={saveNewLicense} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold">{isSavingCert ? 'Saving...' : 'Save License'}</button><button type="button" onClick={() => setEditingNewLicense(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
             </div></div>}
           </div>
