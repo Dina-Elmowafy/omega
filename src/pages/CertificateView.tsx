@@ -17,7 +17,8 @@ const CertificateView: React.FC = () => {
         // تأمين الكود: لو الشهادة متسجلة للتجربة ومفيهاش ID أو سيريال، الكود مش هيضرب
         const safeId = c.id ? String(c.id).toLowerCase() : '';
         const safeSerial = c.serialNumber ? String(c.serialNumber).toLowerCase() : '';
-        return safeId === query || safeSerial === query;
+        const safeBarcodeId = c.barcodeId ? String(c.barcodeId).toLowerCase() : '';
+        return safeId === query || safeSerial === query || safeBarcodeId === query;
       });
       
       setCert(found);
@@ -124,4 +125,3 @@ const CertificateView: React.FC = () => {
 };
 
 export default CertificateView;
-

@@ -1,4 +1,4 @@
-import { User, CompanyInfo, ServiceItem, InspectionCertificate, LicenseRecord, HomePageContent, AboutPageContent } from '../types';
+import { User, CompanyInfo, ServiceItem, InspectionCertificate, NewCertificate, NewLicense, LicenseRecord, HomePageContent, AboutPageContent } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { COMPANY_INFO, SERVICES, MOCK_PROJECTS, INDUSTRIES, WHY_CHOOSE_US } from '../constants';
@@ -179,6 +179,50 @@ export const api = {
     permanentDelete: async (id: string): Promise<void> => {
       await deleteDoc(doc(db, "deletedCertificates", id));
     }
+  },
+
+  newCertificates: {
+    getAll: async (): Promise<NewCertificate[]> => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'newCertificates'));
+        const updates: Promise<void>[] = [];
+        const records = querySnapshot.docs.map((snapshot) => {
+          const record = snapshot.data() as NewCertificate;
+          const status = getComputedStatus(record.expiryDate);
+          if (!record.statusManuallySet && status && record.status !== status) {
+            record.status = status;
+            updates.push(setDoc(doc(db, 'newCertificates', snapshot.id), record));
+          }
+          return record;
+        });
+        await Promise.all(updates);
+        return records;
+      } catch (error) { return []; }
+    },
+    addOrUpdate: async (record: NewCertificate): Promise<void> => { await setDoc(doc(db, 'newCertificates', record.id), record); },
+    delete: async (id: string): Promise<void> => { await deleteDoc(doc(db, 'newCertificates', id)); }
+  },
+
+  newLicenses: {
+    getAll: async (): Promise<NewLicense[]> => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'newLicenses'));
+        const updates: Promise<void>[] = [];
+        const records = querySnapshot.docs.map((snapshot) => {
+          const record = snapshot.data() as NewLicense;
+          const status = getComputedStatus(record.expiryDate);
+          if (!record.statusManuallySet && status && record.status !== status) {
+            record.status = status;
+            updates.push(setDoc(doc(db, 'newLicenses', snapshot.id), record));
+          }
+          return record;
+        });
+        await Promise.all(updates);
+        return records;
+      } catch { return []; }
+    },
+    addOrUpdate: async (record: NewLicense): Promise<void> => { await setDoc(doc(db, 'newLicenses', record.id), record); },
+    delete: async (id: string): Promise<void> => { await deleteDoc(doc(db, 'newLicenses', id)); }
   },
 
   licenses: {

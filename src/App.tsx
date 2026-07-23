@@ -14,6 +14,8 @@ import Blog from './pages/Blog';
 import Chatbot from './components/Chatbot';
 import Preloader from './components/Preloader';
 import CertificateView from './pages/CertificateView';
+import NewCertificateView from './pages/NewCertificateView';
+import NewLicenseView from './pages/NewLicenseView';
 import LicensePage from './pages/LicensePage';
 import LicenseView from './pages/LicenseView';
 import Dashboard from './pages/Dashboard';
@@ -36,6 +38,8 @@ const AppContent: React.FC = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/certificate/:id" element={<CertificateView />} />
+          <Route path="/new-certificate/:id" element={<NewCertificateView />} />
+          <Route path="/new-license/:id" element={<NewLicenseView />} />
           <Route path="/license" element={<LicensePage />} />
           <Route path="/license/:id" element={<LicenseView />} />
           <Route path="/login" element={<Login />} />

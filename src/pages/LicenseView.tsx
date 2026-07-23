@@ -18,7 +18,8 @@ const LicenseView: React.FC = () => {
       const found = licenses.find(l => {
         const safeId = l.id ? String(l.id).toLowerCase() : '';
         const safeSerial = l.serialNumber ? String(l.serialNumber).toLowerCase() : '';
-        return safeId === query || safeSerial === query;
+        const safeBarcodeId = l.barcodeId ? String(l.barcodeId).toLowerCase() : '';
+        return safeId === query || safeSerial === query || safeBarcodeId === query;
       });
       setLicense(found);
       if (found) {
@@ -143,7 +144,7 @@ const LicenseView: React.FC = () => {
               <p className="text-xs uppercase tracking-widest text-slate-400 mb-3">Scan to open this license</p>
               <div className="inline-block rounded-3xl overflow-hidden bg-white p-3">
                 <QRCodeCanvas
-                  value={`${window.location.origin}/#/license/${license.id}`}
+                  value={`${window.location.origin}/#/license/${license.barcodeId || license.id}`}
                   size={180}
                   level="H"
                   className="w-44 h-44"

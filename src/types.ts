@@ -34,6 +34,7 @@ export interface User {
 
 export interface InspectionCertificate {
   id: string;
+  barcodeId?: string;
   equipmentName: string;
   equipmentNameAr?: string;
   serialNumber: string;
@@ -52,8 +53,41 @@ export interface InspectionCertificate {
   companyNameAr?: string;
 }
 
+export interface NewCertificate {
+  id: string;
+  barcodeId?: string;
+  companyName: string;
+  vehicleType: string;
+  brand: string;
+  model: string;
+  plateNumber: string;
+  chassisNumber: string;
+  inspectionDate: string;
+  expiryDate: string;
+  equipmentStatus: 'Accepted' | 'Rejected';
+  status: 'valid' | 'expiring' | 'expired';
+  statusManuallySet?: boolean;
+  pdfUrl: string;
+}
+
+export interface NewLicense {
+  id: string;
+  barcodeId?: string;
+  companyName: string;
+  personName: string;
+  drivingLicenseNumber: string;
+  plateNumber: string;
+  chassisNumber: string;
+  inspectionDate: string;
+  expiryDate: string;
+  status: 'valid' | 'expiring' | 'expired';
+  statusManuallySet?: boolean;
+  pdfUrl: string;
+}
+
 export interface LicenseRecord {
   id: string;
+  barcodeId?: string;
   equipmentName: string;
   model?: string;
   serialNumber: string;

@@ -11,13 +11,15 @@ import { HomePageContent, CompanyInfo, AboutPageContent } from '../types';
 import toast from 'react-hot-toast';
 
 const AdminDashboard: React.FC = () => {
-  const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, licenses, deletedCertificates, deletedLicenses, refreshData } = useData();
+  const { companyInfo, updateCompanyInfo, homeContent, updateHomeContent, aboutContent, updateAboutContent, services, updateServices, certificates, newCertificates, newLicenses, licenses, deletedCertificates, deletedLicenses, refreshData } = useData();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'certificates' | 'licenses' | 'trash'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'certificates' | 'newCertificates' | 'licenses' | 'newLicenses' | 'trash'>('general');
   const [editingService, setEditingService] = useState<any | null>(null);
   const [editingCert, setEditingCert] = useState<any | null>(null); 
+  const [editingNewCert, setEditingNewCert] = useState<any | null>(null);
+  const [editingNewLicense, setEditingNewLicense] = useState<any | null>(null);
   const [editingLicense, setEditingLicense] = useState<any | null>(null);
   const [isSavingCert, setIsSavingCert] = useState(false);
   const [imageEditorOpen, setImageEditorOpen] = useState(false);
@@ -31,18 +33,24 @@ const AdminDashboard: React.FC = () => {
   const [licenseSearch, setLicenseSearch] = useState('');
   const [selectedCertificateCompany, setSelectedCertificateCompany] = useState<string | null>(null);
   const [selectedLicenseCompany, setSelectedLicenseCompany] = useState<string | null>(null);
+  const [selectedNewCertificateCompany, setSelectedNewCertificateCompany] = useState<string | null>(null);
+  const [selectedNewLicenseCompany, setSelectedNewLicenseCompany] = useState<string | null>(null);
   const [manualCertificateCompanies, setManualCertificateCompanies] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('manual_certificate_companies') || '[]'); } catch { return []; }
   });
   const [manualLicenseCompanies, setManualLicenseCompanies] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('manual_license_companies') || '[]'); } catch { return []; }
   });
+  const [manualNewCertificateCompanies, setManualNewCertificateCompanies] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('manual_new_certificate_companies') || '[]'); } catch { return []; } });
+  const [manualNewLicenseCompanies, setManualNewLicenseCompanies] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('manual_new_license_companies') || '[]'); } catch { return []; } });
 
   useEffect(() => { if (homeContent && Object.keys(homeContent).length > 0) setLocalHomeContent(homeContent); }, [homeContent]);
   useEffect(() => { if (aboutContent && Object.keys(aboutContent).length > 0) setLocalAboutContent(aboutContent); }, [aboutContent]);
   useEffect(() => { if (companyInfo && Object.keys(companyInfo).length > 0) setLocalCompanyInfo(companyInfo); }, [companyInfo]);
   useEffect(() => { localStorage.setItem('manual_certificate_companies', JSON.stringify(manualCertificateCompanies)); }, [manualCertificateCompanies]);
   useEffect(() => { localStorage.setItem('manual_license_companies', JSON.stringify(manualLicenseCompanies)); }, [manualLicenseCompanies]);
+  useEffect(() => { localStorage.setItem('manual_new_certificate_companies', JSON.stringify(manualNewCertificateCompanies)); }, [manualNewCertificateCompanies]);
+  useEffect(() => { localStorage.setItem('manual_new_license_companies', JSON.stringify(manualNewLicenseCompanies)); }, [manualNewLicenseCompanies]);
 
   if (!user || user.role !== 'admin') { navigate('/login'); return null; }
 
@@ -164,6 +172,20 @@ const AdminDashboard: React.FC = () => {
       ...(e.target.name === 'status' ? { statusManuallySet: true } : {})
     });
   };
+  const handleNewCertChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingNewCert) return;
+    setEditingNewCert({ ...editingNewCert, [e.target.name]: e.target.value, ...(e.target.name === 'status' ? { statusManuallySet: true } : {}) });
+  };
+  const handleNewLicenseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingNewLicense) return;
+    setEditingNewLicense({ ...editingNewLicense, [e.target.name]: e.target.value, ...(e.target.name === 'status' ? { statusManuallySet: true } : {}) });
+  };
+  const Field: React.FC<{ label: string; name: string; value?: string; type?: string }> = ({ label, name, value, type = 'text' }) => (
+    <div><label className="block text-sm font-bold mb-2">{label}</label><input type={type} name={name} value={value || ''} onChange={handleNewCertChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+  );
+  const NewLicenseField: React.FC<{ label: string; name: string; value?: string; type?: string }> = ({ label, name, value, type = 'text' }) => (
+    <div><label className="block text-sm font-bold mb-2">{label}</label><input type={type} name={name} value={value || ''} onChange={handleNewLicenseChange} disabled={isSavingCert} className="w-full p-3 border rounded-lg" /></div>
+  );
   
   const handleLicensePhotoUpload = () => {
     if (!editingLicense) return;
@@ -197,9 +219,11 @@ const AdminDashboard: React.FC = () => {
         else if (diffDays <= 30) status = 'expiring';
       }
       
+      const { originalId, ...certificateData } = editingCert;
       const finalCert = { 
-        ...editingCert, 
+        ...certificateData, 
         id: editingCert.id.trim(), 
+        barcodeId: editingCert.barcodeId || editingCert.id.trim(),
         status, 
         statusManuallySet: Boolean(editingCert.statusManuallySet),
         equipmentStatus: editingCert.equipmentStatus || 'Accepted',
@@ -207,6 +231,7 @@ const AdminDashboard: React.FC = () => {
       }; 
       
       await api.certificates.addOrUpdate(finalCert); 
+      if (originalId && originalId !== finalCert.id) await api.certificates.delete(originalId);
       await refreshData(); 
       setEditingCert(null); 
       toast.success('Certificate Saved Successfully!'); 
@@ -222,13 +247,16 @@ const AdminDashboard: React.FC = () => {
     if (!editingLicense) return;
     setIsSavingCert(true);
     try {
+      const { originalId, ...licenseData } = editingLicense;
       const finalLicense = {
-        ...editingLicense,
+        ...licenseData,
         id: editingLicense.id?.trim() || `license-${Date.now()}`,
+        barcodeId: editingLicense.barcodeId || editingLicense.id?.trim() || `license-${Date.now()}`,
         statusManuallySet: Boolean(editingLicense.statusManuallySet),
         companyName: editingLicense.companyName || 'Unassigned / Others'
       };
       await api.licenses.addOrUpdate(finalLicense);
+      if (originalId && originalId !== finalLicense.id) await api.licenses.delete(originalId);
       await refreshData();
       setEditingLicense(null);
       toast.success('License Saved Successfully!');
@@ -238,6 +266,30 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setIsSavingCert(false);
     }
+  };
+
+  const saveNewCertificate = async () => {
+    if (!editingNewCert?.id?.trim()) { toast.error('Please enter a Certificate ID'); return; }
+    setIsSavingCert(true);
+    try {
+      const { originalId, ...newCertificateData } = editingNewCert;
+      const finalRecord = { ...newCertificateData, id: editingNewCert.id.trim(), barcodeId: editingNewCert.barcodeId || editingNewCert.id.trim(), companyName: editingNewCert.companyName || 'Unassigned / Others', equipmentStatus: editingNewCert.equipmentStatus || 'Accepted', status: editingNewCert.status || 'valid', statusManuallySet: Boolean(editingNewCert.statusManuallySet) };
+      await api.newCertificates.addOrUpdate(finalRecord);
+      if (originalId && originalId !== finalRecord.id) await api.newCertificates.delete(originalId);
+      await refreshData(); setEditingNewCert(null); toast.success('New certificate saved successfully!');
+    } catch (error: any) { toast.error(`Error: ${error.message || 'Failed to save'}`); }
+    finally { setIsSavingCert(false); }
+  };
+  const saveNewLicense = async () => {
+    if (!editingNewLicense?.id?.trim()) { toast.error('Please enter a Certificate ID'); return; }
+    setIsSavingCert(true);
+    try {
+      const { originalId, ...licenseData } = editingNewLicense;
+      const finalRecord = { ...licenseData, id: editingNewLicense.id.trim(), barcodeId: editingNewLicense.barcodeId || editingNewLicense.id.trim(), companyName: editingNewLicense.companyName || 'Unassigned / Others', status: editingNewLicense.status || 'valid', statusManuallySet: Boolean(editingNewLicense.statusManuallySet) };
+      await api.newLicenses.addOrUpdate(finalRecord);
+      if (originalId && originalId !== finalRecord.id) await api.newLicenses.delete(originalId);
+      await refreshData(); setEditingNewLicense(null); toast.success('New license saved successfully!');
+    } catch (error: any) { toast.error(`Error: ${error.message || 'Failed to save'}`); } finally { setIsSavingCert(false); }
   };
 
   const createNewLicense = (companyName = '') => { 
@@ -272,6 +324,8 @@ const AdminDashboard: React.FC = () => {
       licenseOwnerPhotoUrl: ''
     }); 
   };
+  const createNewVehicleCertificate = () => setEditingNewCert({ id: '', companyName: '', vehicleType: '', brand: '', model: '', plateNumber: '', chassisNumber: '', inspectionDate: '', expiryDate: '', equipmentStatus: 'Accepted', status: 'valid', pdfUrl: '' });
+  const createNewVehicleLicense = (companyName = '') => setEditingNewLicense({ id: '', companyName, personName: '', drivingLicenseNumber: '', plateNumber: '', chassisNumber: '', inspectionDate: '', expiryDate: '', status: 'valid', pdfUrl: '' });
   const createCertificateInCompanyFolder = () => {
     if (selectedCertificateCompany) {
       createNewCertificate(selectedCertificateCompany);
@@ -299,6 +353,8 @@ const AdminDashboard: React.FC = () => {
   
   const deleteCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.certificates.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
   const deleteLicense = async (id: string) => { if (confirm('Delete?')) { try { await api.licenses.delete(id); await refreshData(); toast.success("Deleted"); } catch (error) { toast.error("Error deleting"); } } };
+  const deleteNewCertificate = async (id: string) => { if (confirm('Delete?')) { try { await api.newCertificates.delete(id); await refreshData(); toast.success('Deleted'); } catch { toast.error('Error deleting'); } } };
+  const deleteNewLicense = async (id: string) => { if (confirm('Delete?')) { try { await api.newLicenses.delete(id); await refreshData(); toast.success('Deleted'); } catch { toast.error('Error deleting'); } } };
   const restoreCertificate = async (id: string) => { try { await api.certificates.restore(id); await refreshData(); toast.success("Certificate restored"); } catch (error) { toast.error("Error restoring certificate"); } };
   const restoreLicense = async (id: string) => { try { await api.licenses.restore(id); await refreshData(); toast.success("License restored"); } catch (error) { toast.error("Error restoring license"); } };
   const permanentDeleteCertificate = async (id: string) => {
@@ -363,6 +419,25 @@ const AdminDashboard: React.FC = () => {
   const sortedLicenseCompanies = licenseCompanyNames.sort((a, b) => a.localeCompare(b));
   const selectedCertificateRecords = selectedCertificateCompany ? groupedCerts[selectedCertificateCompany] || [] : [];
   const selectedLicenseRecords = selectedLicenseCompany ? groupedLicenses[selectedLicenseCompany] || [] : [];
+  const groupedNewCertificates = newCertificates.reduce((acc, cert) => { const company = normalizeCompanyFolderName(cert.companyName); if (!acc[company]) acc[company] = []; acc[company].push(cert); return acc; }, {} as Record<string, typeof newCertificates>);
+  const newCertificateCompanies = Array.from(new Set([...Object.keys(groupedNewCertificates), ...manualNewCertificateCompanies.map(normalizeCompanyFolderName)])).sort((a, b) => a.localeCompare(b));
+  const selectedNewCertificateRecords = selectedNewCertificateCompany ? groupedNewCertificates[selectedNewCertificateCompany] || [] : [];
+  const groupedNewLicenses = newLicenses.reduce((acc, license) => { const company = normalizeCompanyFolderName(license.companyName); if (!acc[company]) acc[company] = []; acc[company].push(license); return acc; }, {} as Record<string, typeof newLicenses>);
+  const newLicenseCompanies = Array.from(new Set([...Object.keys(groupedNewLicenses), ...manualNewLicenseCompanies.map(normalizeCompanyFolderName)])).sort((a, b) => a.localeCompare(b));
+  const selectedNewLicenseRecords = selectedNewLicenseCompany ? groupedNewLicenses[selectedNewLicenseCompany] || [] : [];
+
+  const createNewCertificateInCompanyFolder = () => {
+    if (selectedNewCertificateCompany) { setEditingNewCert({ id: '', companyName: selectedNewCertificateCompany, vehicleType: '', brand: '', model: '', plateNumber: '', chassisNumber: '', inspectionDate: '', expiryDate: '', equipmentStatus: 'Accepted', status: 'valid', pdfUrl: '' }); return; }
+    const company = normalizeCompanyFolderName(window.prompt('Company name for the new folder'));
+    if (!company) return;
+    setManualNewCertificateCompanies((items) => items.includes(company) ? items : [...items, company]); setSelectedNewCertificateCompany(company);
+  };
+  const createNewLicenseInCompanyFolder = () => {
+    if (selectedNewLicenseCompany) { createNewVehicleLicense(selectedNewLicenseCompany); return; }
+    const company = normalizeCompanyFolderName(window.prompt('Company name for the new folder'));
+    if (!company) return;
+    setManualNewLicenseCompanies((items) => items.includes(company) ? items : [...items, company]); setSelectedNewLicenseCompany(company);
+  };
 
   const renameCertificateFolder = async (company: string) => {
     const newCompanyName = normalizeCompanyFolderName(window.prompt('New folder name', company));
@@ -456,7 +531,9 @@ const AdminDashboard: React.FC = () => {
           <button type="button" onClick={() => setActiveTab('about')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'about' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Info size={18} /> About Us Page</button>
           <button type="button" onClick={() => setActiveTab('services')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'services' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><FileText size={18} /> Services</button>
           <button type="button" onClick={() => setActiveTab('certificates')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'certificates' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Users size={18} /> Certificates</button>
+          <button type="button" onClick={() => setActiveTab('newCertificates')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'newCertificates' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><FileText size={18} /> New Certificates</button>
           <button type="button" onClick={() => setActiveTab('licenses')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'licenses' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Shield size={18} /> Licenses</button>
+          <button type="button" onClick={() => setActiveTab('newLicenses')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'newLicenses' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Shield size={18} /> New Licenses</button>
           <button type="button" onClick={() => setActiveTab('trash')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${activeTab === 'trash' ? 'bg-omega-blue shadow-lg' : 'hover:bg-gray-800'}`}><Trash2 size={18} /> Trash</button>
         </nav>
         <div className="p-4 border-t border-gray-800 bg-slate-900 sticky bottom-0"><button type="button" onClick={() => { logout(); navigate('/login'); }} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg text-sm font-bold"><LogOut size={18} /> Logout</button></div>
@@ -846,11 +923,11 @@ const AdminDashboard: React.FC = () => {
                             }`}>{license.status}</span></td>
                             <td className="p-5">
                               <div className="inline-flex items-center justify-center rounded-xl bg-white p-1 shadow-sm">
-                                <QRCodeCanvas value={`${window.location.origin}/#/license/${license.id}`} size={64} level="H" />
+                                <QRCodeCanvas value={`${window.location.origin}/#/license/${license.barcodeId || license.id}`} size={64} level="H" />
                               </div>
                             </td>
                             <td className="p-5 text-right flex justify-end gap-3">
-                              <button type="button" onClick={() => setEditingLicense(license)} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
+                              <button type="button" onClick={() => setEditingLicense({ ...license, barcodeId: license.barcodeId || license.id, originalId: license.id })} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
                               <button type="button" onClick={() => deleteLicense(license.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
                             </td>
                           </tr>
@@ -1006,9 +1083,9 @@ const AdminDashboard: React.FC = () => {
                                   cert.equipmentStatus === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                                 }`}>{cert.equipmentStatus || 'Accepted'}</span>
                               </td>
-                              <td className="p-5 flex justify-center text-center"><QRCodeCanvas value={`${window.location.origin}/#/certificate/${cert.id}`} size={512} style={{ width: '48px', height: '48px' }} level={"H"} /></td>
+                              <td className="p-5 flex justify-center text-center"><QRCodeCanvas value={`${window.location.origin}/#/certificate/${cert.barcodeId || cert.id}`} size={512} style={{ width: '48px', height: '48px' }} level={"H"} /></td>
                               <td className="p-5 text-right flex items-center justify-end gap-3">
-                                <button type="button" onClick={() => setEditingCert(cert)} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
+                                <button type="button" onClick={() => setEditingCert({ ...cert, barcodeId: cert.barcodeId || cert.id, originalId: cert.id })} className="text-blue-500 hover:text-blue-700"><Edit2 size={16}/></button>
                                 <button type="button" onClick={() => deleteCertificate(cert.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
                               </td>
                           </tr>
@@ -1084,6 +1161,44 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
         )}
+        {activeTab === 'newCertificates' && (
+          <div className="space-y-6">
+            {!editingNewCert ? (
+              <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                <div className="p-6 border-b flex justify-between items-center"><div><h2 className="text-xl font-bold text-omega-dark">New Certificates</h2><p className="text-sm text-gray-500 mt-1">Organized by company folders.</p></div><button type="button" onClick={createNewCertificateInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2"><Plus size={16}/> New Certificate</button></div>
+                {!selectedNewCertificateCompany ? <div className="grid md:grid-cols-3 gap-4 p-6 bg-gray-50">{newCertificateCompanies.map((company) => <button key={company} type="button" onClick={() => setSelectedNewCertificateCompany(company)} className="bg-white border rounded-xl p-5 text-left hover:border-omega-blue"><Folder className="text-omega-yellow mb-3" size={30}/><p className="font-bold">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewCertificates[company] || []).length} certificates</p></button>)}</div> : <><div className="px-6 py-4 bg-gray-50 flex justify-between"><button type="button" onClick={() => setSelectedNewCertificateCompany(null)} className="text-omega-blue font-bold">Back to companies</button><button type="button" onClick={createNewCertificateInCompanyFolder} className="text-omega-blue font-bold">+ Add here</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">ID</th><th className="p-4">Vehicle</th><th className="p-4">Brand / Model</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewCertificateRecords.map((cert) => <tr key={cert.id} className="border-t"><td className="p-4 font-mono">{cert.id}</td><td className="p-4">{cert.vehicleType}</td><td className="p-4">{cert.brand} {cert.model}</td><td className="p-4">{cert.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-certificate/${cert.barcodeId || cert.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewCert({ ...cert, barcodeId: cert.barcodeId || cert.id, originalId: cert.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewCertificate(cert.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
+                {!newCertificateCompanies.length && <p className="p-8 text-center text-gray-500">No new certificates yet.</p>}
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-xl shadow-sm border max-w-3xl mx-auto"><div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingNewCert.id ? 'Edit New Certificate' : 'New Certificate'}</h3><button type="button" onClick={() => setEditingNewCert(null)} className="p-2 bg-gray-50 rounded-full"><X size={20}/></button></div><div className="space-y-5">
+                <div className="grid md:grid-cols-2 gap-5"><Field label="Company Name / اسم الشركة" name="companyName" value={editingNewCert.companyName} /><Field label="Certificate ID / رقم الشهادة" name="id" value={editingNewCert.id} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><Field label="Vehicle Type / نوع المركبة" name="vehicleType" value={editingNewCert.vehicleType} /><Field label="Brand / الماركة" name="brand" value={editingNewCert.brand} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><Field label="Model / الموديل" name="model" value={editingNewCert.model} /><Field label="Plate Number / رقم اللوحات" name="plateNumber" value={editingNewCert.plateNumber} /></div>
+                <Field label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewCert.chassisNumber} />
+                <div className="grid md:grid-cols-2 gap-5"><Field label="Inspection Date" name="inspectionDate" type="date" value={editingNewCert.inspectionDate} /><Field label="Expiry Date" name="expiryDate" type="date" value={editingNewCert.expiryDate} /></div>
+                <div className="grid md:grid-cols-2 gap-5"><div><label className="block text-sm font-bold mb-2">Acceptance / مقبولة؟</label><select name="equipmentStatus" value={editingNewCert.equipmentStatus} onChange={handleNewCertChange} className="w-full p-3 border rounded-lg"><option value="Accepted">Accepted / مقبولة</option><option value="Rejected">Rejected / مرفوضة</option></select></div><div><label className="block text-sm font-bold mb-2">Validity / سارية؟</label><select name="status" value={editingNewCert.status} onChange={handleNewCertChange} className="w-full p-3 border rounded-lg"><option value="valid">Valid / سارية</option><option value="expiring">Expiring Soon / تنتهي قريباً</option><option value="expired">Expired / منتهية</option></select></div></div>
+                <Field label="PDF / Image Link" name="pdfUrl" value={editingNewCert.pdfUrl} type="url" />
+                <div className="flex gap-4 pt-6 border-t"><button type="button" onClick={saveNewCertificate} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold">{isSavingCert ? 'Saving...' : 'Save Certificate'}</button><button type="button" onClick={() => setEditingNewCert(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
+              </div></div>
+            )}
+          </div>
+        )}
+        {activeTab === 'newLicenses' && (
+          <div className="space-y-6">
+            {!editingNewLicense ? <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-6 border-b flex justify-between items-center"><div><h2 className="text-xl font-bold text-omega-dark">New Licenses</h2><p className="text-sm text-gray-500 mt-1">No owner photo — organized by company folders.</p></div><button type="button" onClick={createNewLicenseInCompanyFolder} className="bg-omega-blue text-white px-6 py-3 rounded-full text-sm font-bold flex gap-2"><Plus size={16}/> New License</button></div>
+              {!selectedNewLicenseCompany ? <div className="grid md:grid-cols-3 gap-4 p-6 bg-gray-50">{newLicenseCompanies.map((company) => <button key={company} type="button" onClick={() => setSelectedNewLicenseCompany(company)} className="bg-white border rounded-xl p-5 text-left hover:border-omega-blue"><Folder className="text-omega-yellow mb-3" size={30}/><p className="font-bold">{company}</p><p className="text-xs text-gray-500 mt-1">{(groupedNewLicenses[company] || []).length} licenses</p></button>)}</div> : <><div className="px-6 py-4 bg-gray-50 flex justify-between"><button type="button" onClick={() => setSelectedNewLicenseCompany(null)} className="text-omega-blue font-bold">Back to companies</button><button type="button" onClick={createNewLicenseInCompanyFolder} className="text-omega-blue font-bold">+ Add here</button></div><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="bg-gray-50 text-xs uppercase"><th className="p-4">Certificate ID</th><th className="p-4">Person</th><th className="p-4">Driving License</th><th className="p-4">Plate</th><th className="p-4">QR</th><th className="p-4" /></tr></thead><tbody>{selectedNewLicenseRecords.map((license) => <tr key={license.id} className="border-t"><td className="p-4 font-mono">{license.id}</td><td className="p-4">{license.personName}</td><td className="p-4 font-mono">{license.drivingLicenseNumber}</td><td className="p-4">{license.plateNumber}</td><td className="p-4"><QRCodeCanvas value={`${window.location.origin}/#/new-license/${license.barcodeId || license.id}`} size={48} level="H" /></td><td className="p-4 flex gap-3"><button type="button" onClick={() => setEditingNewLicense({ ...license, barcodeId: license.barcodeId || license.id, originalId: license.id })} className="text-blue-500"><Edit2 size={16}/></button><button type="button" onClick={() => deleteNewLicense(license.id)} className="text-red-500"><Trash2 size={16}/></button></td></tr>)}</tbody></table></div></>}
+              {!newLicenseCompanies.length && <p className="p-8 text-center text-gray-500">No new licenses yet.</p>}
+            </div> : <div className="bg-white p-8 rounded-xl shadow-sm border max-w-3xl mx-auto"><div className="flex justify-between items-center mb-8 border-b pb-4"><h3 className="font-bold text-xl">{editingNewLicense.id ? 'Edit New License' : 'New License'}</h3><button type="button" onClick={() => setEditingNewLicense(null)} className="p-2 bg-gray-50 rounded-full"><X size={20}/></button></div><div className="space-y-5">
+              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Company Name / اسم الشركة" name="companyName" value={editingNewLicense.companyName}/><NewLicenseField label="Certificate ID / رقم الشهادة" name="id" value={editingNewLicense.id}/></div>
+              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Person Name / اسم الشخص" name="personName" value={editingNewLicense.personName}/><NewLicenseField label="Driving License Number / رقم رخصة القيادة" name="drivingLicenseNumber" value={editingNewLicense.drivingLicenseNumber}/></div>
+              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Vehicle Plate Number / رقم اللوحات" name="plateNumber" value={editingNewLicense.plateNumber}/><NewLicenseField label="Chassis Number / رقم الشاسيه" name="chassisNumber" value={editingNewLicense.chassisNumber}/></div>
+              <div className="grid md:grid-cols-2 gap-5"><NewLicenseField label="Inspection Date" name="inspectionDate" type="date" value={editingNewLicense.inspectionDate}/><NewLicenseField label="Expiry Date" name="expiryDate" type="date" value={editingNewLicense.expiryDate}/></div>
+              <div><label className="block text-sm font-bold mb-2">Validity / سارية؟</label><select name="status" value={editingNewLicense.status} onChange={handleNewLicenseChange} className="w-full p-3 border rounded-lg"><option value="valid">Valid / سارية</option><option value="expiring">Expiring Soon / تنتهي قريباً</option><option value="expired">Expired / منتهية</option></select></div><NewLicenseField label="PDF Link" name="pdfUrl" type="url" value={editingNewLicense.pdfUrl}/>
+              <div className="flex gap-4 pt-6 border-t"><button type="button" onClick={saveNewLicense} disabled={isSavingCert} className="flex-1 py-3 bg-omega-dark text-white rounded-lg font-bold">{isSavingCert ? 'Saving...' : 'Save License'}</button><button type="button" onClick={() => setEditingNewLicense(null)} className="px-8 py-3 bg-gray-200 rounded-lg font-bold">Cancel</button></div>
+            </div></div>}
+          </div>
+        )}
       </main>
       
       {/* Image Editor Modal */}
@@ -1102,4 +1217,3 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
-

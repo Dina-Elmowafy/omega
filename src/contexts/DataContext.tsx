@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ServiceItem, InspectionCertificate, LicenseRecord, ProjectUpdate, BlogPost, JobPosition, CompanyInfo, HomePageContent, AboutPageContent } from '../types';
+import { ServiceItem, InspectionCertificate, NewCertificate, NewLicense, LicenseRecord, ProjectUpdate, BlogPost, JobPosition, CompanyInfo, HomePageContent, AboutPageContent } from '../types';
 import { api } from '../services/api';
 
 interface DataContextType {
@@ -16,6 +16,8 @@ interface DataContextType {
   updateServices: (services: ServiceItem[]) => Promise<void>;
   
   certificates: InspectionCertificate[];
+  newCertificates: NewCertificate[];
+  newLicenses: NewLicense[];
   licenses: LicenseRecord[];
   deletedCertificates: (InspectionCertificate & { deletedAt?: string })[];
   deletedLicenses: (LicenseRecord & { deletedAt?: string })[];
@@ -39,6 +41,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [aboutContent, setAboutContent] = useState<AboutPageContent>({} as AboutPageContent);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [certificates, setCertificates] = useState<InspectionCertificate[]>([]);
+  const [newCertificates, setNewCertificates] = useState<NewCertificate[]>([]);
+  const [newLicenses, setNewLicenses] = useState<NewLicense[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [deletedCertificates, setDeletedCertificates] = useState<(InspectionCertificate & { deletedAt?: string })[]>([]);
   const [deletedLicenses, setDeletedLicenses] = useState<(LicenseRecord & { deletedAt?: string })[]>([]);
@@ -48,12 +52,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshData = async () => {
     try {
-      const [infoData, homeData, aboutData, servicesData, certsData, licensesData, projsData, blogsData, jobsData, deletedCertsData, deletedLicensesData] = await Promise.all([
+      const [infoData, homeData, aboutData, servicesData, certsData, newCertsData, newLicensesData, licensesData, projsData, blogsData, jobsData, deletedCertsData, deletedLicensesData] = await Promise.all([
         api.company.get(),
         api.homePage.get(),
         api.aboutPage.get(),
         api.services.getAll(),
         api.certificates.getAll(),
+        api.newCertificates.getAll(),
+        api.newLicenses.getAll(),
         api.licenses.getAll(),
         api.projects.getAll(),
         api.blog.getAll(),
@@ -67,6 +73,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAboutContent(aboutData);
       setServices(servicesData);
       setCertificates(certsData);
+      setNewCertificates(newCertsData);
+      setNewLicenses(newLicensesData);
       setLicenses(licensesData);
       setDeletedCertificates(deletedCertsData);
       setDeletedLicenses(deletedLicensesData);
@@ -92,7 +100,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       homeContent, updateHomeContent,
       aboutContent, updateAboutContent,
       services, updateServices,
-      certificates, licenses, deletedCertificates, deletedLicenses, updateCertificates, updateLicenses,
+      certificates, newCertificates, newLicenses, licenses, deletedCertificates, deletedLicenses, updateCertificates, updateLicenses,
       projects, blogPosts, jobs,
       loading, refreshData
     }}>
