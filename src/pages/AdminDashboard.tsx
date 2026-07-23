@@ -324,7 +324,6 @@ const AdminDashboard: React.FC = () => {
       licenseOwnerPhotoUrl: ''
     }); 
   };
-  const createNewVehicleCertificate = () => setEditingNewCert({ id: '', companyName: '', vehicleType: '', brand: '', model: '', plateNumber: '', chassisNumber: '', inspectionDate: '', expiryDate: '', equipmentStatus: 'Accepted', status: 'valid', pdfUrl: '' });
   const createNewVehicleLicense = (companyName = '') => setEditingNewLicense({ id: '', companyName, personName: '', drivingLicenseNumber: '', plateNumber: '', chassisNumber: '', inspectionDate: '', expiryDate: '', status: 'valid', pdfUrl: '' });
   const createCertificateInCompanyFolder = () => {
     if (selectedCertificateCompany) {

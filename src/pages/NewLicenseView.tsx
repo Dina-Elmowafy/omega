@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { AlertTriangle, Calendar, CheckCircle, FileText, Shield, XCircle } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, FileText, XCircle } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import Logo from '../components/Logo';
 
